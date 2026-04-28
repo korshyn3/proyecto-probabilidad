@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EstadísticaPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/homeStyle.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="brand-icon">&infin;</div>
+      <span class="brand-text">Aproxima 2</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="<%= request.path == '/' ? 'active' : '' %>">Inicio</a></li>
+      <li><a href="/varianza" class="<%= request.path == '/varianza' ? 'active' : '' %>">Varianza</a></li>
+      <li><a href="/valor_esperado" class="<%= request.path == '/valor_esperado' ? 'active' : '' %>">Esperado</a></li>
+      <li><a href="/normal" class="<%= request.path == '/normal' ? 'active' : '' %>">Normal</a></li>
+      <li><a href="/tstudent" class="<%= request.path == '/tstudent' ? 'active' : '' %>">t-Student</a></li>
+      <li><a href="/problemas" class="<%= request.path == '/problemas' ? 'active' : '' %>">Problemas</a></li>
+      <li><a href="/acerca" class="<%= request.path == '/acerca' ? 'active' : '' %>">Acerca de</a></li>
+    </ul>
+  </div>
+</nav>
+
+<%= yield %>
+
+</body>
+</html>

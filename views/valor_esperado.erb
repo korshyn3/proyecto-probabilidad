@@ -1,0 +1,183 @@
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Valor Esperado</div>
+    <h1>Valor Esperado de una Variable Aleatoria</h1>
+    <p class="page-desc">Calcula E[X], E[X²], Var(X) y σ(X) para una distribución de probabilidad discreta</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Valor Esperado</div>
+      <div class="f-expr">E[X] = Σ xᵢ · P(xᵢ)</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Varianza</div>
+      <div class="f-expr">Var(X) = E[X²] − [E[X]]²</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Distribución de probabilidad</span>
+    </div>
+    <div class="card-body">
+      <div class="labeled-input">
+        <label class="input-label">Valores de x</label>
+        <div class="input-group">
+          <input type="text" id="xs" placeholder="Ej: 1, 2, 3, 4, 5" />
+        </div>
+      </div>
+      <div class="labeled-input">
+        <label class="input-label">Probabilidades P(x) — deben sumar 1</label>
+        <div class="input-group">
+          <input type="text" id="ps" placeholder="Ej: 0.1, 0.2, 0.4, 0.2, 0.1" />
+        </div>
+      </div>
+      <div class="input-group" style="margin-top:0.3rem;">
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+      </div>
+      <p class="field-hint">Un valor x por cada probabilidad, en el mismo orden, separados por comas.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultados</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Desglose paso a paso</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>i</th>
+                <th>xᵢ</th>
+                <th>P(xᵢ)</th>
+                <th>xᵢ · P(xᵢ)</th>
+                <th>xᵢ² · P(xᵢ)</th>
+              </tr>
+            </thead>
+            <tbody id="pasoBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function calcular() {
+  const xs   = document.getElementById('xs').value.trim();
+  const ps   = document.getElementById('ps').value.trim();
+  const btn  = document.getElementById('btnCalc');
+  const errB = document.getElementById('errorBox');
+  const res  = document.getElementById('results');
+
+  errB.style.display = 'none';
+  res.style.display  = 'none';
+
+  if (!xs || !ps) { mostrarError('Completa ambos campos.'); return; }
+
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled  = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('xs', xs);
+    fd.append('ps', ps);
+    const r    = await fetch('/calcular_esperado', { method: 'POST', body: fd });
+    const data = await r.json();
+
+    btn.textContent = 'Calcular';
+    btn.disabled    = false;
+
+    if (data.status === 'error') { mostrarError(data.mensaje); return; }
+    renderResults(data);
+  } catch(e) {
+    btn.textContent = 'Calcular';
+    btn.disabled    = false;
+    mostrarError('Error de conexión con el servidor.');
+  }
+}
+
+function mostrarError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent  = '✕  ' + msg;
+  box.style.display = 'block';
+}
+
+function fmt(n) { return parseFloat(n.toFixed(6)).toString(); }
+
+function renderResults(d) {
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = '';
+
+  const stats = [
+    { label: 'N  (pares x, P(x))',      value: d.n,              featured: false },
+    { label: 'E[X]  (valor esperado)',   value: fmt(d.esperado),  featured: true  },
+    { label: 'E[X²]  (segundo momento)', value: fmt(d.esperado2), featured: false },
+    { label: 'Var(X)  (varianza)',        value: fmt(d.varianza),  featured: true  },
+    { label: 'σ(X)  (desv. estándar)',   value: fmt(d.desv),      featured: false },
+  ];
+
+  stats.forEach(s => {
+    const cell = document.createElement('div');
+    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
+    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
+    grid.appendChild(cell);
+  });
+
+  const tbody = document.getElementById('pasoBody');
+  tbody.innerHTML = '';
+  let sumXP = 0, sumX2P = 0;
+
+  d.pasos.forEach((p, i) => {
+    sumXP  += p.xp;
+    sumX2P += p.x2p;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${fmt(p.x)}</td>
+      <td>${fmt(p.p)}</td>
+      <td>${fmt(p.xp)}</td>
+      <td>${fmt(p.x2p)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'sum-row';
+  sumTr.innerHTML = `
+    <td colspan="3">Σ</td>
+    <td>${fmt(sumXP)}</td>
+    <td>${fmt(sumX2P)}</td>
+  `;
+  tbody.appendChild(sumTr);
+
+  document.getElementById('results').style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['xs', 'ps'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') calcular();
+    });
+  });
+});
+</script>

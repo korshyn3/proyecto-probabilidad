@@ -1,0 +1,243 @@
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Problemas</div>
+    <h1>Colección de Problemas</h1>
+    <p class="page-desc">Diez problemas resueltos — distribución normal estándar y t-Student</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="section-label">Distribución Normal Estándar — 5 problemas</div>
+
+  <!-- Problema 1 -->
+  <div class="problem-card" id="p1">
+    <div class="problem-header" onclick="toggle('p1')">
+      <span class="problem-num">01</span>
+      <span class="problem-type">Normal</span>
+      <div class="problem-text">
+        Las calificaciones de un examen siguen una distribución normal con μ = 70 y σ = 10.
+        ¿Cuál es la probabilidad de que un estudiante obtenga <strong>menos de 85 puntos</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">Estandarizar:  z = (X − μ) / σ = (85 − 70) / 10 = 1.50
+
+P(X &lt; 85) = P(Z &lt; 1.50) = Φ(1.50)</div>
+      <div class="sol-answer">P(Z &lt; 1.50) ≈ 0.9332</div>
+    </div>
+  </div>
+
+  <!-- Problema 2 -->
+  <div class="problem-card" id="p2">
+    <div class="problem-header" onclick="toggle('p2')">
+      <span class="problem-num">02</span>
+      <span class="problem-type">Normal</span>
+      <div class="problem-text">
+        La vida útil de una batería sigue N(500, 50²) horas.
+        ¿Cuál es la probabilidad de que una batería dure <strong>más de 560 horas</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">z = (560 − 500) / 50 = 60 / 50 = 1.20
+
+P(X &gt; 560) = P(Z &gt; 1.20) = 1 − Φ(1.20)</div>
+      <div class="sol-answer">P(Z &gt; 1.20) ≈ 0.1151</div>
+    </div>
+  </div>
+
+  <!-- Problema 3 -->
+  <div class="problem-card" id="p3">
+    <div class="problem-header" onclick="toggle('p3')">
+      <span class="problem-num">03</span>
+      <span class="problem-type">Normal</span>
+      <div class="problem-text">
+        Los diámetros de piezas fabricadas siguen N(25, 0.5²) mm.
+        ¿Qué porcentaje de piezas tiene un diámetro <strong>entre 24.5 mm y 26 mm</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">z₁ = (24.5 − 25) / 0.5 = −1.00
+z₂ = (26.0 − 25) / 0.5 =  2.00
+
+P(−1 ≤ Z ≤ 2) = Φ(2.00) − Φ(−1.00)
+              = 0.9772 − 0.1587</div>
+      <div class="sol-answer">P(−1 ≤ Z ≤ 2) ≈ 0.8186  →  81.86 %</div>
+    </div>
+  </div>
+
+  <!-- Problema 4 -->
+  <div class="problem-card" id="p4">
+    <div class="problem-header" onclick="toggle('p4')">
+      <span class="problem-num">04</span>
+      <span class="problem-type">Normal</span>
+      <div class="problem-text">
+        Los tiempos de espera en un banco se distribuyen N(8, 2²) minutos.
+        ¿Cuál es la probabilidad de esperar <strong>menos de 5 minutos</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">z = (5 − 8) / 2 = −3 / 2 = −1.50
+
+P(X &lt; 5) = P(Z &lt; −1.50) = 1 − Φ(1.50)</div>
+      <div class="sol-answer">P(Z &lt; −1.50) ≈ 0.0668</div>
+    </div>
+  </div>
+
+  <!-- Problema 5 -->
+  <div class="problem-card" id="p5">
+    <div class="problem-header" onclick="toggle('p5')">
+      <span class="problem-num">05</span>
+      <span class="problem-type">Normal</span>
+      <div class="problem-text">
+        Las ventas diarias de una tienda siguen N(5000, 800²) pesos.
+        ¿Cuál es la probabilidad de que en un día las ventas estén
+        <strong>entre $3600 y $6400</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">z₁ = (3600 − 5000) / 800 = −1400 / 800 = −1.75
+z₂ = (6400 − 5000) / 800 =  1400 / 800 =  1.75
+
+P(−1.75 ≤ Z ≤ 1.75) = Φ(1.75) − Φ(−1.75)
+                     = 0.9599 − 0.0401</div>
+      <div class="sol-answer">P(−1.75 ≤ Z ≤ 1.75) ≈ 0.9198  →  91.98 %</div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:1.6rem;">Distribución t-Student — 5 problemas</div>
+
+  <!-- Problema 6 -->
+  <div class="problem-card" id="p6">
+    <div class="problem-header" onclick="toggle('p6')">
+      <span class="problem-num">06</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Una muestra de <strong>n = 16</strong> observaciones produce x̄ = 24.5 y s = 3.2.
+        Prueba H₀: μ = 25 contra H₁: μ ≠ 25 con <strong>α = 0.05</strong> (dos colas).
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">gl = n − 1 = 15
+
+t = (x̄ − μ₀) / (s / √n)
+  = (24.5 − 25) / (3.2 / √16)
+  = −0.5 / 0.8
+  = −0.625
+
+t crítico (α/2 = 0.025, gl = 15) = ±2.131
+
+|t| = 0.625  &lt;  2.131  →  No se rechaza H₀</div>
+      <div class="sol-answer">Conclusión: No hay evidencia suficiente para rechazar μ = 25  (t = −0.625)</div>
+    </div>
+  </div>
+
+  <!-- Problema 7 -->
+  <div class="problem-card" id="p7">
+    <div class="problem-header" onclick="toggle('p7')">
+      <span class="problem-num">07</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Se mide el largo de <strong>n = 10</strong> tornillos: x̄ = 14.8 mm, s = 0.4 mm.
+        ¿Puede afirmarse que la longitud media es <strong>menor a 15 mm</strong>? (α = 0.05, una cola inferior)
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">H₀: μ = 15  vs  H₁: μ &lt; 15     gl = 9
+
+t = (14.8 − 15) / (0.4 / √10)
+  = −0.2 / 0.1265
+  = −1.581
+
+t crítico (α = 0.05, gl = 9, una cola) = −1.833
+
+t = −1.581  &gt;  −1.833  →  No se rechaza H₀</div>
+      <div class="sol-answer">Conclusión: No hay evidencia suficiente de que μ &lt; 15 mm  (t = −1.581)</div>
+    </div>
+  </div>
+
+  <!-- Problema 8 -->
+  <div class="problem-card" id="p8">
+    <div class="problem-header" onclick="toggle('p8')">
+      <span class="problem-num">08</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Una muestra de <strong>n = 25</strong> estudiantes da x̄ = 78 puntos y s = 10 puntos.
+        Construye el <strong>intervalo de confianza al 95 %</strong> para la media poblacional μ.
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">gl = 24     t(0.025, 24) = 2.064
+
+E = t · (s / √n) = 2.064 × (10 / √25) = 2.064 × 2 = 4.128
+
+IC: x̄ ± E  =  78 ± 4.128</div>
+      <div class="sol-answer">IC 95 %:  (73.87,  82.13)</div>
+    </div>
+  </div>
+
+  <!-- Problema 9 -->
+  <div class="problem-card" id="p9">
+    <div class="problem-header" onclick="toggle('p9')">
+      <span class="problem-num">09</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Una muestra de <strong>n = 8</strong> piezas da x̄ = 50.2 g y s = 1.5 g.
+        Prueba H₀: μ = 52 g contra H₁: μ ≠ 52 g con <strong>α = 0.05</strong> (dos colas).
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">gl = 7
+
+t = (50.2 − 52) / (1.5 / √8)
+  = −1.8 / 0.5303
+  = −3.394
+
+t crítico (α/2 = 0.025, gl = 7) = ±2.365
+
+|t| = 3.394  &gt;  2.365  →  Se rechaza H₀</div>
+      <div class="sol-answer">Conclusión: Se rechaza μ = 52 g con α = 0.05  (t = −3.394)</div>
+    </div>
+  </div>
+
+  <!-- Problema 10 -->
+  <div class="problem-card" id="p10">
+    <div class="problem-header" onclick="toggle('p10')">
+      <span class="problem-num">10</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Una empresa registra <strong>n = 20</strong> días de ventas con x̄ = $48,500 y s = $3,200.
+        ¿Puede afirmarse que la venta media diaria <strong>supera $47,000</strong>? (α = 0.05, una cola superior)
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">H₀: μ = 47000  vs  H₁: μ &gt; 47000     gl = 19
+
+t = (48500 − 47000) / (3200 / √20)
+  = 1500 / 715.54
+  = 2.096
+
+t crítico (α = 0.05, gl = 19, una cola) = 1.729
+
+t = 2.096  &gt;  1.729  →  Se rechaza H₀</div>
+      <div class="sol-answer">Conclusión: Hay evidencia de que la venta media supera $47,000  (t = 2.096)</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggle(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>

@@ -1,0 +1,382 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / t-Student</div>
+    <h1>Distribución t de Student</h1>
+    <p class="page-desc">Visualización comparativa t(ν) vs N(0,1) — a mayor gl, más se aproxima a la normal</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Función de densidad</div>
+      <div class="f-expr">f(t) = Γ((ν+1)/2) / (√(νπ)·Γ(ν/2)) · (1+t²/ν)^(−(ν+1)/2)</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Parámetro</div>
+      <div class="f-expr">ν = n − 1  (grados de libertad)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Parámetros</span>
+    </div>
+    <div class="card-body">
+
+      <div class="labeled-input">
+        <label class="input-label">Tipo de probabilidad</label>
+        <div class="mode-group">
+          <button class="mode-btn active" data-mode="left"    onclick="setMode('left')">P(T ≤ t)</button>
+          <button class="mode-btn"        data-mode="right"   onclick="setMode('right')">P(T ≥ t)</button>
+          <button class="mode-btn"        data-mode="between" onclick="setMode('between')">P(t₁ ≤ T ≤ t₂)</button>
+          <button class="mode-btn"        data-mode="tails"   onclick="setMode('tails')">P(|T| ≥ t)</button>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-col">
+          <label class="input-label">Grados de libertad (ν = n−1)</label>
+          <input type="number" id="gl" step="1" min="1" placeholder="Ej: 9" />
+        </div>
+        <div class="input-col" id="colT1">
+          <label class="input-label" id="labelT1">Valor de t</label>
+          <input type="number" id="t1" step="0.001" placeholder="Ej: 2.262" />
+        </div>
+        <div class="input-col" id="colT2" style="display:none;">
+          <label class="input-label">Valor de t₂</label>
+          <input type="number" id="t2" step="0.001" placeholder="Ej: 3.0" />
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+        </div>
+      </div>
+      <p class="field-hint">Valores t críticos comunes: α=0.05 (ν=9) → 1.833 (una cola) / 2.262 (dos colas).</p>
+
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" id="chartTitle">Distribución t de Student</span>
+      </div>
+      <div class="card-body">
+        <div class="legend-row">
+          <div class="legend-item">
+            <div class="legend-line" style="background:#1a3a6b;"></div>
+            <span id="legendT">t(ν)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-line dashed"></div>
+            <span>N(0,1)</span>
+          </div>
+          <div class="legend-item">
+            <div style="width:24px; height:14px; background:rgba(26,58,107,0.18); border:1px solid rgba(26,58,107,0.4); border-radius:2px;"></div>
+            <span>Área = probabilidad</span>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="tChart"></canvas>
+        </div>
+        <p class="chart-note" id="chartNote"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultados</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Math helpers ──────────────────────────────────────────────────────────────
+function logGamma(z) {
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
+  z--;
+  const g = 7;
+  const c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,
+             771.32342877765313,-176.61502916214059,12.507343278686905,
+             -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function betaCF(x, a, b) {
+  const MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+
+function ibeta(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const lbeta = logGamma(a) + logGamma(b) - logGamma(a + b);
+  const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta) / a;
+  if (x < (a + 1) / (a + b + 2)) return front * betaCF(x, a, b);
+  return 1 - Math.exp(Math.log(1-x)*b + Math.log(x)*a - lbeta) / b * betaCF(1-x, b, a);
+}
+
+function tCDF(t, df) {
+  const x = df / (df + t * t);
+  const p = 0.5 * ibeta(x, df / 2, 0.5);
+  return t >= 0 ? 1 - p : p;
+}
+
+function tPDF(t, df) {
+  const lnum = logGamma((df + 1) / 2);
+  const lden = 0.5 * Math.log(df * Math.PI) + logGamma(df / 2);
+  return Math.exp(lnum - lden) * Math.pow(1 + t * t / df, -(df + 1) / 2);
+}
+
+function normalPDF(z) { return Math.exp(-0.5*z*z) / Math.sqrt(2*Math.PI); }
+
+function normalCDF(z) {
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  const x = Math.abs(z) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x));
+  return 0.5*(1+sign*y);
+}
+
+function genT(df, xMin, xMax, step) {
+  const pts = [];
+  for (let t = xMin; t <= xMax + step/2; t += step)
+    pts.push({ x: +t.toFixed(3), y: tPDF(t, df) });
+  return pts;
+}
+
+function genNorm(xMin, xMax, step) {
+  const pts = [];
+  for (let z = xMin; z <= xMax + step/2; z += step)
+    pts.push({ x: +z.toFixed(3), y: normalPDF(z) });
+  return pts;
+}
+
+function genTShade(df, from, to, step) {
+  const pts = [];
+  for (let t = from; t <= to + step/2; t += step)
+    pts.push({ x: +t.toFixed(3), y: tPDF(t, df) });
+  return pts;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMode = 'left';
+let myChart = null;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const colT2 = document.getElementById('colT2');
+  const lbl   = document.getElementById('labelT1');
+  if (mode === 'between') {
+    colT2.style.display = '';
+    lbl.textContent = 'Valor de t₁';
+  } else {
+    colT2.style.display = 'none';
+    lbl.textContent = mode === 'tails' ? 'Valor de t (positivo)' : 'Valor de t';
+  }
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('results').style.display  = 'none';
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+function buildChart(df, shadedSets, xMin, xMax) {
+  const ctx = document.getElementById('tChart').getContext('2d');
+  if (myChart) { myChart.destroy(); myChart = null; }
+
+  const datasets = [
+    {
+      data: genT(df, xMin, xMax, 0.05),
+      borderColor: '#1a3a6b',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.4,
+      order: 0
+    },
+    {
+      data: genNorm(xMin, xMax, 0.05),
+      borderColor: '#aaaaaa',
+      borderWidth: 1.5,
+      borderDash: [5, 4],
+      pointRadius: 0,
+      fill: false,
+      tension: 0.4,
+      order: 0
+    },
+    ...shadedSets.map(pts => ({
+      data: pts,
+      borderColor: 'rgba(26,58,107,0.45)',
+      backgroundColor: 'rgba(26,58,107,0.18)',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: 'origin',
+      tension: 0.4,
+      order: 1
+    }))
+  ];
+
+  const maxY = Math.max(tPDF(0, df), 0.44) * 1.06;
+
+  myChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: {
+          type: 'linear', min: xMin, max: xMax,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 11 }, maxTicksLimit: 9 },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        },
+        y: {
+          min: 0, max: maxY,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      },
+      showLine: true
+    }
+  });
+}
+
+// ── Calculate ─────────────────────────────────────────────────────────────────
+function calcular() {
+  const errB = document.getElementById('errorBox');
+  errB.style.display = 'none';
+
+  const df = parseInt(document.getElementById('gl').value);
+  if (!df || df < 1) { mostrarError('Ingresa un número entero de grados de libertad ≥ 1.'); return; }
+
+  const t1val = parseFloat(document.getElementById('t1').value);
+  if (isNaN(t1val)) { mostrarError('Ingresa un valor de t válido.'); return; }
+
+  let t2val;
+  if (currentMode === 'between') {
+    t2val = parseFloat(document.getElementById('t2').value);
+    if (isNaN(t2val)) { mostrarError('Ingresa un valor de t₂ válido.'); return; }
+    if (t1val >= t2val) { mostrarError('t₁ debe ser menor que t₂.'); return; }
+  }
+  if (currentMode === 'tails' && t1val < 0) { mostrarError('Ingresa un valor t positivo para cola doble.'); return; }
+
+  const xRange = Math.max(Math.abs(t1val) * 1.5 + 1, currentMode === 'between' ? Math.abs(t2val) * 1.5 + 1 : 0, 4);
+  const xMin = -xRange, xMax = xRange;
+
+  const fmt6 = n => parseFloat(n.toFixed(6)).toString();
+  const fmt4 = n => n.toFixed(4);
+  const p = t => tCDF(t, df);
+
+  let shadedSets = [];
+  let stats = [];
+  let note  = '';
+
+  if (currentMode === 'left') {
+    const prob = p(t1val);
+    shadedSets = [genTShade(df, xMin, t1val, 0.02)];
+    note  = `P(T ≤ ${t1val} | ν=${df}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'ν  (grados de libertad)', value: df,         featured: false },
+      { label: 't',                        value: t1val,      featured: false },
+      { label: 'P(T ≤ t)  ← resultado',   value: fmt6(prob), featured: true  },
+      { label: 'P(T > t)  complemento',    value: fmt6(1-prob), featured: false },
+    ];
+  } else if (currentMode === 'right') {
+    const prob = 1 - p(t1val);
+    shadedSets = [genTShade(df, t1val, xMax, 0.02)];
+    note  = `P(T ≥ ${t1val} | ν=${df}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'ν  (grados de libertad)', value: df,         featured: false },
+      { label: 't',                        value: t1val,      featured: false },
+      { label: 'P(T ≥ t)  ← resultado',   value: fmt6(prob), featured: true  },
+      { label: 'P(T < t)  complemento',    value: fmt6(1-prob), featured: false },
+    ];
+  } else if (currentMode === 'between') {
+    const prob = p(t2val) - p(t1val);
+    shadedSets = [genTShade(df, t1val, t2val, 0.02)];
+    note  = `P(${t1val} ≤ T ≤ ${t2val} | ν=${df}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'ν  (grados de libertad)',  value: df,         featured: false },
+      { label: 't₁',                        value: t1val,      featured: false },
+      { label: 't₂',                        value: t2val,      featured: false },
+      { label: 'P(t₁ ≤ T ≤ t₂)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'Complemento',               value: fmt6(1-prob), featured: false },
+    ];
+  } else {
+    const prob = 2 * (1 - p(t1val));
+    shadedSets = [genTShade(df, xMin, -t1val, 0.02), genTShade(df, t1val, xMax, 0.02)];
+    note  = `P(|T| ≥ ${t1val} | ν=${df}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'ν  (grados de libertad)',   value: df,         featured: false },
+      { label: '±t',                         value: `±${t1val}`,featured: false },
+      { label: 'P(|T| ≥ t)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
+      { label: 'P(|T| < t)  complemento',             value: fmt6(1-prob), featured: false },
+    ];
+  }
+
+  document.getElementById('chartTitle').textContent = `t-Student  t(${df})  vs  N(0,1)`;
+  document.getElementById('legendT').textContent    = `t(${df})`;
+
+  buildChart(df, shadedSets, xMin, xMax);
+  document.getElementById('chartNote').textContent = note;
+
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = '';
+  stats.forEach(s => {
+    const cell = document.createElement('div');
+    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
+    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
+    grid.appendChild(cell);
+  });
+
+  document.getElementById('results').style.display = 'block';
+}
+
+function mostrarError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent   = '✕  ' + msg;
+  box.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['gl','t1','t2'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') calcular();
+    });
+  });
+});
+</script>

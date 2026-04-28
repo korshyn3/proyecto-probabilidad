@@ -1,0 +1,160 @@
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Varianza</div>
+    <h1>Varianza y Desviación Estándar</h1>
+    <p class="page-desc">Calcula la dispersión de un conjunto de datos numéricos</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Varianza Poblacional</div>
+      <div class="f-expr">σ² = Σ(xᵢ − μ)² / N</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Varianza Muestral</div>
+      <div class="f-expr">s² = Σ(xᵢ − x̄)² / (n − 1)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Conjunto de datos</span>
+    </div>
+    <div class="card-body">
+      <div class="input-group">
+        <input type="text" id="datos" placeholder="Ej: 4, 7, 13, 2, 1, 9, 15" />
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+      </div>
+      <p class="field-hint">Ingresa los valores separados por comas. Se aceptan decimales.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultados</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Desglose paso a paso</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>i</th>
+                <th>xᵢ</th>
+                <th>(xᵢ − x̄)²</th>
+              </tr>
+            </thead>
+            <tbody id="pasoBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function calcular() {
+  const datos = document.getElementById('datos').value.trim();
+  const btn = document.getElementById('btnCalc');
+  const errorBox = document.getElementById('errorBox');
+  const results = document.getElementById('results');
+
+  errorBox.style.display = 'none';
+  results.style.display = 'none';
+
+  if (!datos) { mostrarError('Ingresa al menos 2 números.'); return; }
+
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('datos', datos);
+    const res = await fetch('/calcular', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    btn.textContent = 'Calcular';
+    btn.disabled = false;
+
+    if (data.status === 'error') { mostrarError(data.mensaje); return; }
+    renderResults(data);
+  } catch(e) {
+    btn.textContent = 'Calcular';
+    btn.disabled = false;
+    mostrarError('Error de conexión con el servidor.');
+  }
+}
+
+function mostrarError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = '✕  ' + msg;
+  box.style.display = 'block';
+}
+
+function fmt(n) { return parseFloat(n.toFixed(6)).toString(); }
+
+function renderResults(d) {
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = '';
+
+  const stats = [
+    { label: 'N  (cantidad de datos)',     value: d.n,                     featured: false },
+    { label: 'x̄  (media aritmética)',      value: fmt(d.media),            featured: false },
+    { label: 'σ²  (varianza poblacional)', value: fmt(d.varianza_poblacional), featured: true  },
+    { label: 's²  (varianza muestral)',    value: fmt(d.varianza_muestral),    featured: true  },
+    { label: 'σ  (desv. estándar pobl.)', value: fmt(d.desv_poblacional),   featured: false },
+    { label: 's  (desv. estándar muestral)', value: fmt(d.desv_muestral),  featured: false },
+  ];
+
+  stats.forEach(s => {
+    const cell = document.createElement('div');
+    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
+    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
+    grid.appendChild(cell);
+  });
+
+  const tbody = document.getElementById('pasoBody');
+  tbody.innerHTML = '';
+  let suma = 0;
+
+  d.pasos.forEach((p, i) => {
+    suma += p.cuadrado;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${fmt(p.valor)}</td>
+      <td>${fmt(p.cuadrado)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'sum-row';
+  sumTr.innerHTML = `<td colspan="2">Σ (xᵢ − x̄)²</td><td>${fmt(suma)}</td>`;
+  tbody.appendChild(sumTr);
+
+  document.getElementById('results').style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('datos').addEventListener('keydown', e => {
+    if (e.key === 'Enter') calcular();
+  });
+});
+</script>

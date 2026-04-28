@@ -1,0 +1,284 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Normal Estándar</div>
+    <h1>Distribución Normal Estándar</h1>
+    <p class="page-desc">Visualización interactiva de N(0,1) — áreas y probabilidades bajo la curva</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Función de densidad</div>
+      <div class="f-expr">f(z) = (1/√(2π)) · e^(−z²/2)</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Notación</div>
+      <div class="f-expr">Z ~ N(0, 1)  →  μ=0, σ=1</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Parámetros</span>
+    </div>
+    <div class="card-body">
+
+      <div class="labeled-input">
+        <label class="input-label">Tipo de probabilidad</label>
+        <div class="mode-group">
+          <button class="mode-btn active" data-mode="left"   onclick="setMode('left')">P(Z ≤ z)</button>
+          <button class="mode-btn"        data-mode="right"  onclick="setMode('right')">P(Z ≥ z)</button>
+          <button class="mode-btn"        data-mode="between" onclick="setMode('between')">P(z₁ ≤ Z ≤ z₂)</button>
+          <button class="mode-btn"        data-mode="tails"  onclick="setMode('tails')">P(|Z| ≥ z)</button>
+        </div>
+      </div>
+
+      <div class="input-row" id="inputRow">
+        <div class="input-col" id="colZ1">
+          <label class="input-label" id="labelZ1">Valor de z</label>
+          <input type="number" id="z1" step="0.01" placeholder="Ej: 1.65" />
+        </div>
+        <div class="input-col" id="colZ2" style="display:none;">
+          <label class="input-label">Valor de z₂</label>
+          <input type="number" id="z2" step="0.01" placeholder="Ej: 2.33" />
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+        </div>
+      </div>
+      <p class="field-hint">Los valores z típicos están entre −4 y 4.</p>
+
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Distribución Normal Estándar N(0, 1)</span>
+      </div>
+      <div class="card-body">
+        <div class="legend-row">
+          <div class="legend-item">
+            <div class="legend-line" style="background:#1a3a6b; height:2px;"></div>
+            <span>Curva N(0,1)</span>
+          </div>
+          <div class="legend-item">
+            <div style="width:24px; height:14px; background:rgba(26,58,107,0.18); border:1px solid rgba(26,58,107,0.4); border-radius:2px;"></div>
+            <span>Área = probabilidad</span>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="normalChart"></canvas>
+        </div>
+        <p class="chart-note" id="chartNote"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultados</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Math helpers ──────────────────────────────────────────────────────────────
+function normalPDF(z) {
+  return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+}
+
+function normalCDF(z) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741,
+        a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  const x = Math.abs(z) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5*t + a4)*t + a3)*t + a2)*t + a1)*t * Math.exp(-x*x));
+  return 0.5 * (1 + sign * y);
+}
+
+function genCurve(from, to, step) {
+  const pts = [];
+  for (let z = from; z <= to + step/2; z += step) {
+    pts.push({ x: +z.toFixed(3), y: normalPDF(z) });
+  }
+  return pts;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMode = 'left';
+let myChart = null;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const colZ2 = document.getElementById('colZ2');
+  const lbl   = document.getElementById('labelZ1');
+  if (mode === 'between') {
+    colZ2.style.display = '';
+    lbl.textContent = 'Valor de z₁';
+  } else {
+    colZ2.style.display = 'none';
+    lbl.textContent = mode === 'tails' ? 'Valor de z (positivo)' : 'Valor de z';
+  }
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('results').style.display  = 'none';
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+function buildChart(shadedSets) {
+  const ctx = document.getElementById('normalChart').getContext('2d');
+  if (myChart) { myChart.destroy(); myChart = null; }
+
+  const fullCurve = genCurve(-4, 4, 0.04);
+
+  const datasets = [
+    {
+      data: fullCurve,
+      borderColor: '#1a3a6b',
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.4,
+      order: 0
+    },
+    ...shadedSets.map(pts => ({
+      data: pts,
+      borderColor: 'rgba(26,58,107,0.45)',
+      backgroundColor: 'rgba(26,58,107,0.18)',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: 'origin',
+      tension: 0.4,
+      order: 1
+    }))
+  ];
+
+  myChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: {
+          type: 'linear', min: -4, max: 4,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 11 }, stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        },
+        y: {
+          min: 0, max: 0.44,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      },
+      showLine: true
+    }
+  });
+}
+
+// ── Calculate ─────────────────────────────────────────────────────────────────
+function calcular() {
+  const errB = document.getElementById('errorBox');
+  errB.style.display = 'none';
+
+  const z1val = parseFloat(document.getElementById('z1').value);
+  let z2val;
+
+  if (isNaN(z1val)) { mostrarError('Ingresa un valor de z válido.'); return; }
+  if (currentMode === 'between') {
+    z2val = parseFloat(document.getElementById('z2').value);
+    if (isNaN(z2val)) { mostrarError('Ingresa un valor de z₂ válido.'); return; }
+    if (z1val >= z2val) { mostrarError('z₁ debe ser menor que z₂.'); return; }
+  }
+  if (currentMode === 'tails' && z1val < 0) { mostrarError('Ingresa un valor z positivo para cola doble.'); return; }
+
+  let shadedSets = [];
+  let stats = [];
+  let note  = '';
+
+  const p = x => normalCDF(x);
+  const fmt6 = n => parseFloat(n.toFixed(6)).toString();
+  const fmt4 = n => n.toFixed(4);
+
+  if (currentMode === 'left') {
+    const prob = p(z1val);
+    shadedSets = [genCurve(-4, z1val, 0.02)];
+    note  = `Área sombreada: P(Z ≤ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'z', value: z1val, featured: false },
+      { label: 'P(Z ≤ z)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z > z)  complemento',  value: fmt6(1 - prob), featured: false },
+    ];
+  } else if (currentMode === 'right') {
+    const prob = 1 - p(z1val);
+    shadedSets = [genCurve(z1val, 4, 0.02)];
+    note  = `Área sombreada: P(Z ≥ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'z', value: z1val, featured: false },
+      { label: 'P(Z ≥ z)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z < z)  complemento',  value: fmt6(1 - prob), featured: false },
+    ];
+  } else if (currentMode === 'between') {
+    const prob = p(z2val) - p(z1val);
+    shadedSets = [genCurve(z1val, z2val, 0.02)];
+    note  = `Área sombreada: P(${z1val} ≤ Z ≤ ${z2val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'z₁', value: z1val, featured: false },
+      { label: 'z₂', value: z2val, featured: false },
+      { label: 'P(z₁ ≤ Z ≤ z₂)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z < z₁) + P(Z > z₂)',         value: fmt6(1 - prob), featured: false },
+    ];
+  } else {
+    const prob = 2 * (1 - p(z1val));
+    shadedSets = [genCurve(-4, -z1val, 0.02), genCurve(z1val, 4, 0.02)];
+    note  = `Área sombreada: P(|Z| ≥ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: '±z', value: `±${z1val}`, featured: false },
+      { label: 'P(|Z| ≥ z)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
+      { label: 'P(|Z| < z)  complemento',              value: fmt6(1 - prob), featured: false },
+    ];
+  }
+
+  buildChart(shadedSets);
+  document.getElementById('chartNote').textContent = note;
+
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = '';
+  stats.forEach(s => {
+    const cell = document.createElement('div');
+    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
+    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
+    grid.appendChild(cell);
+  });
+
+  document.getElementById('results').style.display = 'block';
+}
+
+function mostrarError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent   = '✕  ' + msg;
+  box.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['z1','z2'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') calcular();
+    });
+  });
+});
+</script>
