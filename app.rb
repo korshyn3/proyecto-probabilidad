@@ -34,14 +34,25 @@ get '/acerca' do
   erb :acerca
 end
 
+def parse_num(str)
+  s = str.strip
+  if s.include?('/')
+    parts = s.split('/')
+    raise ArgumentError unless parts.length == 2
+    Float(parts[0].strip) / Float(parts[1].strip)
+  else
+    Float(s)
+  end
+end
+
 post '/calcular_esperado' do
   content_type :json
   begin
     xs_raw = params[:xs] || ''
     ps_raw = params[:ps] || ''
 
-    xs = xs_raw.split(',').map { |x| Float(x.strip) }
-    ps = ps_raw.split(',').map { |x| Float(x.strip) }
+    xs = xs_raw.split(',').map { |x| parse_num(x) }
+    ps = ps_raw.split(',').map { |x| parse_num(x) }
 
     raise 'Ingresa al menos 2 pares (x, P(x))' if xs.length < 2
     raise 'La cantidad de valores x y P(x) debe ser igual' if xs.length != ps.length
@@ -66,8 +77,8 @@ post '/calcular_esperado' do
       desv:      desv.round(6),
       pasos:     pasos
     }.to_json
-  rescue ArgumentError
-    { status: 'error', mensaje: 'Solo ingresa números separados por comas' }.to_json
+  rescue ArgumentError, ZeroDivisionError
+    { status: 'error', mensaje: 'Ingresa números o fracciones válidas (ej: 1/6), separados por comas' }.to_json
   rescue RuntimeError => e
     { status: 'error', mensaje: e.message }.to_json
   end
