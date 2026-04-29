@@ -22,9 +22,9 @@ get '/normal' do
   erb :normal
 end
 
-get '/tstudent' do
-  erb :tstudent
-end
+# get '/tstudent' do
+#   erb :tstudent
+# end
 
 get '/problemas' do
   erb :problemas

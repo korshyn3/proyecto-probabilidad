@@ -30,27 +30,49 @@
       <div class="labeled-input">
         <label class="input-label">Tipo de probabilidad</label>
         <div class="mode-group">
-          <button class="mode-btn active" data-mode="left"   onclick="setMode('left')">P(Z ≤ z)</button>
-          <button class="mode-btn"        data-mode="right"  onclick="setMode('right')">P(Z ≥ z)</button>
-          <button class="mode-btn"        data-mode="between" onclick="setMode('between')">P(z₁ ≤ Z ≤ z₂)</button>
-          <button class="mode-btn"        data-mode="tails"  onclick="setMode('tails')">P(|Z| ≥ z)</button>
+          <button class="mode-btn active" data-mode="left"   onclick="setMode('left')">P(Z ≤ k)</button>
+          <button class="mode-btn"        data-mode="right"  onclick="setMode('right')">P(Z ≥ k)</button>
+          <button class="mode-btn"        data-mode="between" onclick="setMode('between')">P(k₁ ≤ Z ≤ k₂)</button>
+          <button class="mode-btn"        data-mode="tails"   onclick="setMode('tails')">P(|Z| ≥ k)</button>
+          <button class="mode-btn"        data-mode="inverse" onclick="setMode('inverse')">k dado P →</button>
         </div>
       </div>
 
       <div class="input-row" id="inputRow">
         <div class="input-col" id="colZ1">
-          <label class="input-label" id="labelZ1">Valor de z</label>
+          <label class="input-label" id="labelZ1">Valor de k</label>
           <input type="number" id="z1" step="0.01" placeholder="Ej: 1.65" />
         </div>
         <div class="input-col" id="colZ2" style="display:none;">
-          <label class="input-label">Valor de z₂</label>
+          <label class="input-label">Valor de k₂</label>
           <input type="number" id="z2" step="0.01" placeholder="Ej: 2.33" />
         </div>
         <div style="display:flex; align-items:flex-end;">
           <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
         </div>
       </div>
-      <p class="field-hint">Los valores z típicos están entre −4 y 4.</p>
+      <p class="field-hint" id="hintNormal">Los valores k típicos están entre −4 y 4.</p>
+
+      <div id="inputRowInverse" style="display:none;">
+        <div class="labeled-input">
+          <label class="input-label">Tipo de área</label>
+          <div class="mode-group" style="margin-top:0.4rem;">
+            <button class="mode-btn active" data-inv="left"   onclick="setInvType('left')">P(Z ≤ k) = p</button>
+            <button class="mode-btn"        data-inv="right"  onclick="setInvType('right')">P(Z ≥ k) = p</button>
+            <button class="mode-btn"        data-inv="center" onclick="setInvType('center')">P(−k ≤ Z ≤ k) = p</button>
+          </div>
+        </div>
+        <div class="input-row" style="margin-top:0.8rem;">
+          <div class="input-col">
+            <label class="input-label">Probabilidad p</label>
+            <input type="number" id="pInv" step="0.001" min="0.001" max="0.999" placeholder="Ej: 0.95" />
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button class="btn" onclick="calcular()">Encontrar k</button>
+          </div>
+        </div>
+        <p class="field-hint">Ingresa una probabilidad entre 0 y 1 (sin incluir los extremos).</p>
+      </div>
 
     </div>
   </div>
@@ -108,6 +130,37 @@ function normalCDF(z) {
   return 0.5 * (1 + sign * y);
 }
 
+function normalQuantile(p) {
+  if (p <= 0 || p >= 1) return NaN;
+  const a = [-3.969683028665376e+01,  2.209460984245205e+02,
+             -2.759285104469687e+02,  1.383577518672690e+02,
+             -3.066479806614716e+01,  2.506628277459239e+00];
+  const b = [-5.447609879822406e+01,  1.615858368580409e+02,
+             -1.556989798598866e+02,  6.680131188771972e+01,
+             -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01,
+             -2.400758277161838e+00, -2.549732539343734e+00,
+              4.374664141464968e+00,  2.938163982698783e+00];
+  const d = [ 7.784695709041462e-03,  3.224671290700398e-01,
+              2.445134137142996e+00,  3.754408661907416e+00];
+  const pLow = 0.02425, pHigh = 1 - pLow;
+  let q;
+  if (p < pLow) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+            ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  } else if (p <= pHigh) {
+    q = p - 0.5;
+    const r = q * q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q /
+            (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  } else {
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+              ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+}
+
 function genCurve(from, to, step) {
   const pts = [];
   for (let z = from; z <= to + step/2; z += step) {
@@ -118,22 +171,34 @@ function genCurve(from, to, step) {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentMode = 'left';
-let myChart = null;
+let invType     = 'left';
+let myChart     = null;
 
 function setMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  const colZ2 = document.getElementById('colZ2');
-  const lbl   = document.getElementById('labelZ1');
-  if (mode === 'between') {
-    colZ2.style.display = '';
-    lbl.textContent = 'Valor de z₁';
-  } else {
-    colZ2.style.display = 'none';
-    lbl.textContent = mode === 'tails' ? 'Valor de z (positivo)' : 'Valor de z';
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const isInverse = mode === 'inverse';
+  document.getElementById('inputRow').style.display        = isInverse ? 'none' : '';
+  document.getElementById('hintNormal').style.display      = isInverse ? 'none' : '';
+  document.getElementById('inputRowInverse').style.display = isInverse ? ''     : 'none';
+  if (!isInverse) {
+    const colZ2 = document.getElementById('colZ2');
+    const lbl   = document.getElementById('labelZ1');
+    if (mode === 'between') {
+      colZ2.style.display = '';
+      lbl.textContent = 'Valor de k₁';
+    } else {
+      colZ2.style.display = 'none';
+      lbl.textContent = mode === 'tails' ? 'Valor de k (positivo)' : 'Valor de k';
+    }
   }
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('results').style.display  = 'none';
+}
+
+function setInvType(type) {
+  invType = type;
+  document.querySelectorAll('[data-inv]').forEach(b => b.classList.toggle('active', b.dataset.inv === type));
 }
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
@@ -191,71 +256,9 @@ function buildChart(shadedSets) {
 }
 
 // ── Calculate ─────────────────────────────────────────────────────────────────
-function calcular() {
-  const errB = document.getElementById('errorBox');
-  errB.style.display = 'none';
-
-  const z1val = parseFloat(document.getElementById('z1').value);
-  let z2val;
-
-  if (isNaN(z1val)) { mostrarError('Ingresa un valor de z válido.'); return; }
-  if (currentMode === 'between') {
-    z2val = parseFloat(document.getElementById('z2').value);
-    if (isNaN(z2val)) { mostrarError('Ingresa un valor de z₂ válido.'); return; }
-    if (z1val >= z2val) { mostrarError('z₁ debe ser menor que z₂.'); return; }
-  }
-  if (currentMode === 'tails' && z1val < 0) { mostrarError('Ingresa un valor z positivo para cola doble.'); return; }
-
-  let shadedSets = [];
-  let stats = [];
-  let note  = '';
-
-  const p = x => normalCDF(x);
-  const fmt6 = n => parseFloat(n.toFixed(6)).toString();
-  const fmt4 = n => n.toFixed(4);
-
-  if (currentMode === 'left') {
-    const prob = p(z1val);
-    shadedSets = [genCurve(-4, z1val, 0.02)];
-    note  = `Área sombreada: P(Z ≤ ${z1val}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'z', value: z1val, featured: false },
-      { label: 'P(Z ≤ z)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z > z)  complemento',  value: fmt6(1 - prob), featured: false },
-    ];
-  } else if (currentMode === 'right') {
-    const prob = 1 - p(z1val);
-    shadedSets = [genCurve(z1val, 4, 0.02)];
-    note  = `Área sombreada: P(Z ≥ ${z1val}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'z', value: z1val, featured: false },
-      { label: 'P(Z ≥ z)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z < z)  complemento',  value: fmt6(1 - prob), featured: false },
-    ];
-  } else if (currentMode === 'between') {
-    const prob = p(z2val) - p(z1val);
-    shadedSets = [genCurve(z1val, z2val, 0.02)];
-    note  = `Área sombreada: P(${z1val} ≤ Z ≤ ${z2val}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'z₁', value: z1val, featured: false },
-      { label: 'z₂', value: z2val, featured: false },
-      { label: 'P(z₁ ≤ Z ≤ z₂)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z < z₁) + P(Z > z₂)',         value: fmt6(1 - prob), featured: false },
-    ];
-  } else {
-    const prob = 2 * (1 - p(z1val));
-    shadedSets = [genCurve(-4, -z1val, 0.02), genCurve(z1val, 4, 0.02)];
-    note  = `Área sombreada: P(|Z| ≥ ${z1val}) = ${fmt4(prob)}`;
-    stats = [
-      { label: '±z', value: `±${z1val}`, featured: false },
-      { label: 'P(|Z| ≥ z)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
-      { label: 'P(|Z| < z)  complemento',              value: fmt6(1 - prob), featured: false },
-    ];
-  }
-
+function renderResults(shadedSets, note, stats) {
   buildChart(shadedSets);
   document.getElementById('chartNote').textContent = note;
-
   const grid = document.getElementById('statsGrid');
   grid.innerHTML = '';
   stats.forEach(s => {
@@ -264,8 +267,107 @@ function calcular() {
     cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
     grid.appendChild(cell);
   });
-
   document.getElementById('results').style.display = 'block';
+}
+
+function calcular() {
+  document.getElementById('errorBox').style.display = 'none';
+
+  const cdf  = x => normalCDF(x);
+  const fmt6 = n => parseFloat(n.toFixed(6)).toString();
+  const fmt4 = n => n.toFixed(4);
+  const fmtZ = n => parseFloat(n.toFixed(4)).toString();
+
+  if (currentMode === 'inverse') {
+    const pval = parseFloat(document.getElementById('pInv').value);
+    if (isNaN(pval) || pval <= 0 || pval >= 1) {
+      mostrarError('Ingresa una probabilidad entre 0 y 1 (sin incluir extremos).'); return;
+    }
+    let zResult, shadedSets, note, stats;
+    if (invType === 'left') {
+      zResult    = normalQuantile(pval);
+      shadedSets = [genCurve(-4, zResult, 0.02)];
+      note       = `P(Z ≤ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
+      stats      = [
+        { label: 'p ingresada',           value: pval,              featured: false },
+        { label: 'k  ← resultado',        value: fmtZ(zResult),     featured: true  },
+        { label: 'Verificación P(Z ≤ k)', value: fmt6(cdf(zResult)), featured: false },
+      ];
+    } else if (invType === 'right') {
+      zResult    = normalQuantile(1 - pval);
+      shadedSets = [genCurve(zResult, 4, 0.02)];
+      note       = `P(Z ≥ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
+      stats      = [
+        { label: 'p ingresada',           value: pval,                  featured: false },
+        { label: 'k  ← resultado',        value: fmtZ(zResult),         featured: true  },
+        { label: 'Verificación P(Z ≥ k)', value: fmt6(1 - cdf(zResult)), featured: false },
+      ];
+    } else {
+      zResult    = normalQuantile((1 + pval) / 2);
+      shadedSets = [genCurve(-zResult, zResult, 0.02)];
+      note       = `P(−${fmtZ(zResult)} ≤ Z ≤ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
+      stats      = [
+        { label: 'p ingresada',                value: pval,                                    featured: false },
+        { label: '±k  ← resultado',            value: `±${fmtZ(zResult)}`,                     featured: true  },
+        { label: 'Verificación P(−k ≤ Z ≤ k)', value: fmt6(cdf(zResult) - cdf(-zResult)),      featured: false },
+      ];
+    }
+    renderResults(shadedSets, note, stats);
+    return;
+  }
+
+  const z1val = parseFloat(document.getElementById('z1').value);
+  let z2val;
+  if (isNaN(z1val)) { mostrarError('Ingresa un valor de k válido.'); return; }
+  if (currentMode === 'between') {
+    z2val = parseFloat(document.getElementById('z2').value);
+    if (isNaN(z2val)) { mostrarError('Ingresa un valor de k₂ válido.'); return; }
+    if (z1val >= z2val) { mostrarError('k₁ debe ser menor que k₂.'); return; }
+  }
+  if (currentMode === 'tails' && z1val < 0) { mostrarError('Ingresa un valor k positivo para cola doble.'); return; }
+
+  let shadedSets = [], stats = [], note = '';
+
+  if (currentMode === 'left') {
+    const prob = cdf(z1val);
+    shadedSets = [genCurve(-4, z1val, 0.02)];
+    note  = `Área sombreada: P(Z ≤ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'k', value: z1val, featured: false },
+      { label: 'P(Z ≤ k)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z > k)  complemento',  value: fmt6(1 - prob), featured: false },
+    ];
+  } else if (currentMode === 'right') {
+    const prob = 1 - cdf(z1val);
+    shadedSets = [genCurve(z1val, 4, 0.02)];
+    note  = `Área sombreada: P(Z ≥ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'k', value: z1val, featured: false },
+      { label: 'P(Z ≥ k)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z < k)  complemento',  value: fmt6(1 - prob), featured: false },
+    ];
+  } else if (currentMode === 'between') {
+    const prob = cdf(z2val) - cdf(z1val);
+    shadedSets = [genCurve(z1val, z2val, 0.02)];
+    note  = `Área sombreada: P(${z1val} ≤ Z ≤ ${z2val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: 'k₁', value: z1val, featured: false },
+      { label: 'k₂', value: z2val, featured: false },
+      { label: 'P(k₁ ≤ Z ≤ k₂)  ← resultado', value: fmt6(prob), featured: true },
+      { label: 'P(Z < k₁) + P(Z > k₂)',         value: fmt6(1 - prob), featured: false },
+    ];
+  } else {
+    const prob = 2 * (1 - cdf(z1val));
+    shadedSets = [genCurve(-4, -z1val, 0.02), genCurve(z1val, 4, 0.02)];
+    note  = `Área sombreada: P(|Z| ≥ ${z1val}) = ${fmt4(prob)}`;
+    stats = [
+      { label: '±k', value: `±${z1val}`, featured: false },
+      { label: 'P(|Z| ≥ k)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
+      { label: 'P(|Z| < k)  complemento',              value: fmt6(1 - prob), featured: false },
+    ];
+  }
+
+  renderResults(shadedSets, note, stats);
 }
 
 function mostrarError(msg) {
@@ -275,7 +377,7 @@ function mostrarError(msg) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  ['z1','z2'].forEach(id => {
+  ['z1','z2','pInv'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') calcular();
     });
