@@ -11,7 +11,7 @@ gem install sinatra
 
 ### 2. Correr la app
 ```bash
-ruby app.rb
+bundle exec ruby app.rb
 ```
 
 ### 3. Abrir en el navegador

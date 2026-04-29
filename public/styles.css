@@ -405,6 +405,7 @@
       padding: 0.65rem 0.9rem;
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
+      appearance: textfield;
       -moz-appearance: textfield;
     }
     input[type="number"]::-webkit-inner-spin-button,
