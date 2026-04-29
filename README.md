@@ -19,13 +19,6 @@ Ir a: **http://localhost:4567**
 
 ---
 
-## Funcionalidades actuales
-- ✅ Cálculo de **varianza poblacional** (σ²)
-- ✅ Cálculo de **varianza muestral** (s²)
-- ✅ Desviación estándar poblacional y muestral
-- ✅ Media aritmética
-- ✅ Tabla paso a paso con cada (xᵢ − x̄)²
-
 ## Estructura del proyecto
 ```
 estadistica_app/
