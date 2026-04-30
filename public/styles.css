@@ -56,8 +56,6 @@
 
     .nav-brand .brand-icon {
       width: 35px; height: 35px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
       font-family: var(--mono);
       font-size: 1rem;
