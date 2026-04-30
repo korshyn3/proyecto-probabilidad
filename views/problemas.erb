@@ -1,3 +1,5 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
 <div class="page-header">
   <div class="page-header-inner">
     <div class="breadcrumb">Inicio / Problemas</div>
@@ -26,6 +28,10 @@
 
 P(X &lt; 85) = P(Z &lt; 1.50) = Φ(1.50)</div>
       <div class="sol-answer">P(Z &lt; 1.50) ≈ 0.9332</div>
+      <div class="chart-wrap" style="height:200px; margin-top:1rem;">
+        <canvas id="chart-p1"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p1-note"></p>
     </div>
   </div>
 
@@ -45,6 +51,10 @@ P(X &lt; 85) = P(Z &lt; 1.50) = Φ(1.50)</div>
 
 P(X &gt; 560) = P(Z &gt; 1.20) = 1 − Φ(1.20)</div>
       <div class="sol-answer">P(Z &gt; 1.20) ≈ 0.1151</div>
+      <div class="chart-wrap" style="height:200px; margin-top:1rem;">
+        <canvas id="chart-p2"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p2-note"></p>
     </div>
   </div>
 
@@ -66,6 +76,10 @@ z₂ = (26.0 − 25) / 0.5 =  2.00
 P(−1 ≤ Z ≤ 2) = Φ(2.00) − Φ(−1.00)
               = 0.9772 − 0.1587</div>
       <div class="sol-answer">P(−1 ≤ Z ≤ 2) ≈ 0.8186  →  81.86 %</div>
+      <div class="chart-wrap" style="height:200px; margin-top:1rem;">
+        <canvas id="chart-p3"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p3-note"></p>
     </div>
   </div>
 
@@ -85,6 +99,10 @@ P(−1 ≤ Z ≤ 2) = Φ(2.00) − Φ(−1.00)
 
 P(X &lt; 5) = P(Z &lt; −1.50) = 1 − Φ(1.50)</div>
       <div class="sol-answer">P(Z &lt; −1.50) ≈ 0.0668</div>
+      <div class="chart-wrap" style="height:200px; margin-top:1rem;">
+        <canvas id="chart-p4"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p4-note"></p>
     </div>
   </div>
 
@@ -107,6 +125,10 @@ z₂ = (6400 − 5000) / 800 =  1400 / 800 =  1.75
 P(−1.75 ≤ Z ≤ 1.75) = Φ(1.75) − Φ(−1.75)
                      = 0.9599 − 0.0401</div>
       <div class="sol-answer">P(−1.75 ≤ Z ≤ 1.75) ≈ 0.9198  →  91.98 %</div>
+      <div class="chart-wrap" style="height:200px; margin-top:1rem;">
+        <canvas id="chart-p5"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p5-note"></p>
     </div>
   </div>
 
@@ -246,7 +268,101 @@ s  = √60.266 ≈ 7.763</div>
 </div>
 
 <script>
+function normalPDF(z) {
+  return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
+}
+
+function normalCDF(z) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741,
+        a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  const x = Math.abs(z) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5*t + a4)*t + a3)*t + a2)*t + a1)*t * Math.exp(-x*x));
+  return 0.5 * (1 + sign * y);
+}
+
+function genCurve(from, to, step) {
+  const pts = [];
+  for (let z = from; z <= to + step / 2; z += step) {
+    pts.push({ x: +z.toFixed(3), y: normalPDF(z) });
+  }
+  return pts;
+}
+
+const probCharts = {};
+
+function buildProblemChart(canvasId, shadedSets, note) {
+  if (probCharts[canvasId]) {
+    probCharts[canvasId].destroy();
+    delete probCharts[canvasId];
+  }
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const fullCurve = genCurve(-4, 4, 0.04);
+  const datasets = [
+    {
+      data: fullCurve,
+      borderColor: '#1a3a6b',
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.4,
+      order: 0
+    },
+    ...shadedSets.map(pts => ({
+      data: pts,
+      borderColor: 'rgba(26,58,107,0.45)',
+      backgroundColor: 'rgba(26,58,107,0.18)',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: 'origin',
+      tension: 0.4,
+      order: 1
+    }))
+  ];
+  probCharts[canvasId] = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: {
+          type: 'linear', min: -4, max: 4,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        },
+        y: {
+          min: 0, max: 0.44,
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      },
+      showLine: true
+    }
+  });
+  const noteEl = document.getElementById(canvasId + '-note');
+  if (noteEl) noteEl.textContent = note;
+}
+
+const PROBLEM_CHARTS = {
+  'p1': () => buildProblemChart('chart-p1', [genCurve(-4, 1.50, 0.02)],     'Área sombreada: P(Z ≤ 1.50) ≈ 0.9332'),
+  'p2': () => buildProblemChart('chart-p2', [genCurve(1.20, 4, 0.02)],      'Área sombreada: P(Z ≥ 1.20) ≈ 0.1151'),
+  'p3': () => buildProblemChart('chart-p3', [genCurve(-1.00, 2.00, 0.02)],  'Área sombreada: P(−1 ≤ Z ≤ 2) ≈ 0.8186'),
+  'p4': () => buildProblemChart('chart-p4', [genCurve(-4, -1.50, 0.02)],    'Área sombreada: P(Z ≤ −1.50) ≈ 0.0668'),
+  'p5': () => buildProblemChart('chart-p5', [genCurve(-1.75, 1.75, 0.02)],  'Área sombreada: P(−1.75 ≤ Z ≤ 1.75) ≈ 0.9198'),
+};
+
+const renderedCharts = new Set();
+
 function toggle(id) {
-  document.getElementById(id).classList.toggle('open');
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+  if (card.classList.contains('open') && PROBLEM_CHARTS[id] && !renderedCharts.has(id)) {
+    renderedCharts.add(id);
+    setTimeout(() => PROBLEM_CHARTS[id](), 50);
+  }
 }
 </script>
