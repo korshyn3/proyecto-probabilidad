@@ -41,11 +41,19 @@
       <div class="input-row" id="inputRow">
         <div class="input-col" id="colZ1">
           <label class="input-label" id="labelZ1">Valor de k</label>
-          <input type="number" id="z1" step="0.01" placeholder="Ej: 1.65" />
+          <input type="text" id="z1" placeholder="Ej: 1.65" />
+          <div class="inf-btns">
+            <button class="inf-btn" id="inf-z1-neg" onclick="setInf('z1','neg')">−∞</button>
+            <button class="inf-btn" id="inf-z1-pos" onclick="setInf('z1','pos')">+∞</button>
+          </div>
         </div>
         <div class="input-col" id="colZ2" style="display:none;">
           <label class="input-label">Valor de k₂</label>
-          <input type="number" id="z2" step="0.01" placeholder="Ej: 2.33" />
+          <input type="text" id="z2" placeholder="Ej: 2.33" />
+          <div class="inf-btns">
+            <button class="inf-btn" id="inf-z2-neg" onclick="setInf('z2','neg')">−∞</button>
+            <button class="inf-btn" id="inf-z2-pos" onclick="setInf('z2','pos')">+∞</button>
+          </div>
         </div>
         <div style="display:flex; align-items:flex-end;">
           <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
@@ -169,6 +177,25 @@ function genCurve(from, to, step) {
   return pts;
 }
 
+// ── Infinity helpers ──────────────────────────────────────────────────────────
+function parseZ(val) {
+  const s = String(val).trim();
+  if (s === '∞' || s === '+∞') return Infinity;
+  if (s === '−∞' || s === '-∞') return -Infinity;
+  return parseFloat(s);
+}
+
+function chartClamp(z) {
+  if (!isFinite(z)) return z > 0 ? 4 : -4;
+  return Math.max(-4, Math.min(4, z));
+}
+
+function setInf(id, dir) {
+  document.getElementById(id).value = dir === 'pos' ? '∞' : '−∞';
+  document.querySelectorAll(`[id^="inf-${id}-"]`).forEach(b => b.classList.remove('active'));
+  document.getElementById(`inf-${id}-${dir}`).classList.add('active');
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentMode = 'left';
 let invType     = 'left';
@@ -194,6 +221,7 @@ function setMode(mode) {
   }
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('results').style.display  = 'none';
+  document.querySelectorAll('.inf-btn').forEach(b => b.classList.remove('active'));
 }
 
 function setInvType(type) {
@@ -276,7 +304,7 @@ function calcular() {
   const cdf  = x => normalCDF(x);
   const fmt6 = n => parseFloat(n.toFixed(6)).toString();
   const fmt4 = n => n.toFixed(4);
-  const fmtZ = n => parseFloat(n.toFixed(4)).toString();
+  const fmtZ = n => !isFinite(n) ? (n > 0 ? '∞' : '−∞') : parseFloat(n.toFixed(4)).toString();
 
   if (currentMode === 'inverse') {
     const pval = parseFloat(document.getElementById('pInv').value);
@@ -316,52 +344,52 @@ function calcular() {
     return;
   }
 
-  const z1val = parseFloat(document.getElementById('z1').value);
+  const z1val = parseZ(document.getElementById('z1').value);
   let z2val;
   if (isNaN(z1val)) { mostrarError('Ingresa un valor de k válido.'); return; }
   if (currentMode === 'between') {
-    z2val = parseFloat(document.getElementById('z2').value);
+    z2val = parseZ(document.getElementById('z2').value);
     if (isNaN(z2val)) { mostrarError('Ingresa un valor de k₂ válido.'); return; }
     if (z1val >= z2val) { mostrarError('k₁ debe ser menor que k₂.'); return; }
   }
-  if (currentMode === 'tails' && z1val < 0) { mostrarError('Ingresa un valor k positivo para cola doble.'); return; }
+  if (currentMode === 'tails' && z1val <= 0) { mostrarError('Ingresa un valor k positivo para cola doble.'); return; }
 
   let shadedSets = [], stats = [], note = '';
 
   if (currentMode === 'left') {
     const prob = cdf(z1val);
-    shadedSets = [genCurve(-4, z1val, 0.02)];
-    note  = `Área sombreada: P(Z ≤ ${z1val}) = ${fmt4(prob)}`;
+    shadedSets = [genCurve(-4, chartClamp(z1val), 0.02)];
+    note  = `Área sombreada: P(Z ≤ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
     stats = [
-      { label: 'k', value: z1val, featured: false },
+      { label: 'k', value: fmtZ(z1val), featured: false },
       { label: 'P(Z ≤ k)  ← resultado', value: fmt6(prob), featured: true },
       { label: 'P(Z > k)  complemento',  value: fmt6(1 - prob), featured: false },
     ];
   } else if (currentMode === 'right') {
     const prob = 1 - cdf(z1val);
-    shadedSets = [genCurve(z1val, 4, 0.02)];
-    note  = `Área sombreada: P(Z ≥ ${z1val}) = ${fmt4(prob)}`;
+    shadedSets = [genCurve(chartClamp(z1val), 4, 0.02)];
+    note  = `Área sombreada: P(Z ≥ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
     stats = [
-      { label: 'k', value: z1val, featured: false },
+      { label: 'k', value: fmtZ(z1val), featured: false },
       { label: 'P(Z ≥ k)  ← resultado', value: fmt6(prob), featured: true },
       { label: 'P(Z < k)  complemento',  value: fmt6(1 - prob), featured: false },
     ];
   } else if (currentMode === 'between') {
     const prob = cdf(z2val) - cdf(z1val);
-    shadedSets = [genCurve(z1val, z2val, 0.02)];
-    note  = `Área sombreada: P(${z1val} ≤ Z ≤ ${z2val}) = ${fmt4(prob)}`;
+    shadedSets = [genCurve(chartClamp(z1val), chartClamp(z2val), 0.02)];
+    note  = `Área sombreada: P(${fmtZ(z1val)} ≤ Z ≤ ${fmtZ(z2val)}) = ${fmt4(prob)}`;
     stats = [
-      { label: 'k₁', value: z1val, featured: false },
-      { label: 'k₂', value: z2val, featured: false },
+      { label: 'k₁', value: fmtZ(z1val), featured: false },
+      { label: 'k₂', value: fmtZ(z2val), featured: false },
       { label: 'P(k₁ ≤ Z ≤ k₂)  ← resultado', value: fmt6(prob), featured: true },
       { label: 'P(Z < k₁) + P(Z > k₂)',         value: fmt6(1 - prob), featured: false },
     ];
   } else {
     const prob = 2 * (1 - cdf(z1val));
-    shadedSets = [genCurve(-4, -z1val, 0.02), genCurve(z1val, 4, 0.02)];
-    note  = `Área sombreada: P(|Z| ≥ ${z1val}) = ${fmt4(prob)}`;
+    shadedSets = [genCurve(-4, chartClamp(-z1val), 0.02), genCurve(chartClamp(z1val), 4, 0.02)];
+    note  = `Área sombreada: P(|Z| ≥ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
     stats = [
-      { label: '±k', value: `±${z1val}`, featured: false },
+      { label: '±k', value: `±${fmtZ(z1val)}`, featured: false },
       { label: 'P(|Z| ≥ k)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
       { label: 'P(|Z| < k)  complemento',              value: fmt6(1 - prob), featured: false },
     ];
@@ -380,6 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
   ['z1','z2','pInv'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') calcular();
+    });
+  });
+  ['z1','z2'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      document.querySelectorAll(`[id^="inf-${id}-"]`).forEach(b => b.classList.remove('active'));
     });
   });
 });

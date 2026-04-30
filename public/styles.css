@@ -468,6 +468,31 @@
 
     .input-col { display: flex; flex-direction: column; flex: 1; min-width: 140px; }
 
+    .inf-btns {
+      display: flex;
+      gap: 0.25rem;
+      margin-top: 0.3rem;
+    }
+
+    .inf-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      padding: 0.18rem 0.45rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      line-height: 1.2;
+    }
+
+    .inf-btn:hover,
+    .inf-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
     /* ── CHART ── */
     .chart-wrap {
       position: relative;
