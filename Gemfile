@@ -4,3 +4,5 @@ gem 'sinatra'
 gem 'json'
 gem "sinatra-contrib"
 gem "puma"
+gem "ostruct"
+gem "logger"
