@@ -51,9 +51,7 @@
       <div class="card-header">
         <span class="card-title">Resultados</span>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
-      </div>
+      <div class="card-body" id="statsGrid"></div>
     </div>
 
     <div class="card">
@@ -125,23 +123,38 @@ function mostrarError(msg) {
 function fmt(n) { return parseFloat(n.toFixed(6)).toString(); }
 
 function renderResults(d) {
-  const grid = document.getElementById('statsGrid');
-  grid.innerHTML = '';
+  const cell = (sym, nombre, valor, featured = false) => `
+    <div class="stat-cell${featured ? ' featured' : ''}">
+      <div class="sc-label"><span class="sc-sym">${sym}</span>${nombre}</div>
+      <div class="sc-value">${valor}</div>
+    </div>`;
 
-  const stats = [
-    { label: 'N  (pares x, P(x))',      value: d.n,              featured: false },
-    { label: 'E[X]  (valor esperado)',   value: fmt(d.esperado),  featured: true  },
-    { label: 'E[X²]  (segundo momento)', value: fmt(d.esperado2), featured: false },
-    { label: 'Var(X)  (varianza)',        value: fmt(d.varianza),  featured: true  },
-    { label: 'σ(X)  (desv. estándar)',   value: fmt(d.desv),      featured: false },
-  ];
+  const sumaP = d.pasos.reduce((acc, p) => acc + p.p, 0);
 
-  stats.forEach(s => {
-    const cell = document.createElement('div');
-    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
-    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
-    grid.appendChild(cell);
-  });
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      <div class="res-group">
+        <div class="res-title">Datos</div>
+        <div class="stats-grid res-cells">
+          ${cell('n', 'pares (x, P(x))', d.n)}
+          ${cell('ΣP(xᵢ)', 'suma de probabilidades', fmt(sumaP))}
+        </div>
+      </div>
+      <div class="res-group">
+        <div class="res-title">Momentos</div>
+        <div class="stats-grid res-cells">
+          ${cell('E[X]', 'valor esperado', fmt(d.esperado), true)}
+          ${cell('E[X²]', 'segundo momento', fmt(d.esperado2))}
+        </div>
+      </div>
+      <div class="res-group">
+        <div class="res-title">Dispersión</div>
+        <div class="stats-grid res-cells">
+          ${cell('σ(X)', 'desv. estándar', fmt(d.desv))}
+          ${cell('Var(X)', 'varianza', fmt(d.varianza), true)}
+        </div>
+      </div>
+    </div>`;
 
   const tbody = document.getElementById('pasoBody');
   tbody.innerHTML = '';
