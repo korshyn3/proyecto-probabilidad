@@ -501,6 +501,21 @@
 
     .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* Botón con mini campana arriba y texto abajo */
+    .mode-btn.has-icon {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.85rem 0.45rem;
+    }
+
+    .mode-icon {
+      display: block;
+      width: 64px;
+      height: 26px;
+    }
+
     .mode-btn.active {
       background: var(--accent);
       color: #fff;
