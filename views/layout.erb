@@ -6,7 +6,9 @@
   <title>Aproxima2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=2">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="/styles.css?v=3">
   <link rel="stylesheet" href="/homeStyle.css">
 </head>
 <body>
@@ -41,6 +43,14 @@
     t.addEventListener('input', ajustar);
     window.addEventListener('resize', ajustar);
     ajustar();
+  });
+
+  // Fórmulas en notación matemática (si KaTeX no carga, queda el texto lineal)
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.katex) return;
+    document.querySelectorAll('[data-tex]').forEach(el => {
+      katex.render('\\displaystyle ' + el.dataset.tex, el, { throwOnError: false });
+    });
   });
 </script>
 
