@@ -40,9 +40,7 @@
       <div class="card-header">
         <span class="card-title">Resultados</span>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
-      </div>
+      <div class="card-body" id="statsGrid"></div>
     </div>
 
     <div class="card">
@@ -54,9 +52,9 @@
           <table>
             <thead>
               <tr>
-                <th>i</th>
-                <th>xᵢ</th>
-                <th>(xᵢ − x̄)²</th>
+                <th class="math">i</th>
+                <th class="math">xᵢ</th>
+                <th class="math">(xᵢ − x̄)²</th>
               </tr>
             </thead>
             <tbody id="pasoBody"></tbody>
@@ -110,24 +108,36 @@ function mostrarError(msg) {
 function fmt(n) { return parseFloat(n.toFixed(6)).toString(); }
 
 function renderResults(d) {
-  const grid = document.getElementById('statsGrid');
-  grid.innerHTML = '';
+  const cell = (sym, nombre, valor, featured = false) => `
+    <div class="stat-cell${featured ? ' featured' : ''}">
+      <div class="sc-label"><span class="sc-sym">${sym}</span>${nombre}</div>
+      <div class="sc-value">${valor}</div>
+    </div>`;
 
-  const stats = [
-    { label: 'N  (cantidad de datos)',     value: d.n,                     featured: false },
-    { label: 'x̄  (media aritmética)',      value: fmt(d.media),            featured: false },
-    { label: 'σ²  (varianza poblacional)', value: fmt(d.varianza_poblacional), featured: true  },
-    { label: 's²  (varianza muestral)',    value: fmt(d.varianza_muestral),    featured: true  },
-    { label: 'σ  (desv. estándar pobl.)', value: fmt(d.desv_poblacional),   featured: false },
-    { label: 's  (desv. estándar muestral)', value: fmt(d.desv_muestral),  featured: false },
-  ];
-
-  stats.forEach(s => {
-    const cell = document.createElement('div');
-    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
-    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
-    grid.appendChild(cell);
-  });
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      <div class="res-group">
+        <div class="res-title">Datos</div>
+        <div class="stats-grid res-cells">
+          ${cell('n', 'cantidad de datos', d.n)}
+          ${cell('x̄', 'media aritmética', fmt(d.media))}
+        </div>
+      </div>
+      <div class="res-group">
+        <div class="res-title">Poblacional <span class="res-note">÷ N</span></div>
+        <div class="stats-grid res-cells">
+          ${cell('σ', 'desv. estándar', fmt(d.desv_poblacional))}
+          ${cell('σ²', 'varianza', fmt(d.varianza_poblacional), true)}
+        </div>
+      </div>
+      <div class="res-group">
+        <div class="res-title">Muestral <span class="res-note">÷ (n − 1)</span></div>
+        <div class="stats-grid res-cells">
+          ${cell('s', 'desv. estándar', fmt(d.desv_muestral))}
+          ${cell('s²', 'varianza', fmt(d.varianza_muestral), true)}
+        </div>
+      </div>
+    </div>`;
 
   const tbody = document.getElementById('pasoBody');
   tbody.innerHTML = '';

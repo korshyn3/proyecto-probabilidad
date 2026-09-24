@@ -348,6 +348,48 @@
       font-weight: 700;
     }
 
+    /* Símbolo matemático dentro de la etiqueta: no se pasa a mayúsculas (σ ≠ Σ) */
+    .stat-cell .sc-sym {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      text-transform: none;
+      letter-spacing: 0;
+      margin-right: 0.45rem;
+    }
+
+    /* ── RESULTADOS AGRUPADOS ── */
+    .res-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.45rem;
+    }
+
+    .res-note {
+      font-family: var(--mono);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      margin-left: 0.4rem;
+    }
+
+    .res-split {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 720px) { .res-split { grid-template-columns: 1fr; } }
+
+    /* Cada grupo apila sus valores en una columna */
+    .stats-grid.res-cells {
+      grid-template-columns: 1fr;
+      margin-bottom: 0;
+    }
+
     /* ── TABLE ── */
     .table-wrap { overflow-x: auto; }
 
@@ -373,6 +415,13 @@
     }
 
     th:first-child { text-align: left; }
+
+    /* Encabezados con notación matemática: sin mayúsculas (x̄ ≠ X̄) */
+    th.math {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.8rem;
+    }
 
     td {
       padding: 0.55rem 1rem;
