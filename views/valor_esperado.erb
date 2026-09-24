@@ -27,13 +27,13 @@
       <div class="labeled-input">
         <label class="input-label">Valores de x</label>
         <div class="input-group">
-          <input type="text" id="xs" placeholder="Ej: 1, 2, 3, 4, 5" />
+          <textarea id="xs" rows="1" placeholder="Ej: 1, 2, 3, 4, 5"></textarea>
         </div>
       </div>
       <div class="labeled-input">
         <label class="input-label">Probabilidades P(x) — deben sumar 1</label>
         <div class="input-group">
-          <input type="text" id="ps" placeholder="Ej: 0.1, 0.2, 0.4, 0.2, 0.1  o  1/6, 1/6, 1/6, 1/6, 1/6, 1/6" />
+          <textarea id="ps" rows="1" placeholder="Ej: 0.1, 0.2, 0.4, 0.2, 0.1  o  1/6, 1/6, 1/6, 1/6, 1/6, 1/6"></textarea>
         </div>
       </div>
       <div class="input-group" style="margin-top:0.3rem;">
@@ -176,7 +176,7 @@ function renderResults(d) {
 document.addEventListener('DOMContentLoaded', () => {
   ['xs', 'ps'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') calcular();
+      if (e.key === 'Enter') { e.preventDefault(); calcular(); }
     });
   });
 });

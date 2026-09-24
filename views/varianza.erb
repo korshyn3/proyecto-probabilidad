@@ -24,8 +24,8 @@
       <span class="card-title">Conjunto de datos</span>
     </div>
     <div class="card-body">
-      <div class="input-group">
-        <input type="text" id="datos" placeholder="Ej: 4, 7, 13, 2, 1, 9, 15" />
+      <div class="input-group" style="align-items:flex-start;">
+        <textarea id="datos" rows="1" placeholder="Ej: 4, 7, 13, 2, 1, 9, 15"></textarea>
         <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
       </div>
       <p class="field-hint">Ingresa los valores separados por comas. Se aceptan decimales.</p>
@@ -154,7 +154,7 @@ function renderResults(d) {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('datos').addEventListener('keydown', e => {
-    if (e.key === 'Enter') calcular();
+    if (e.key === 'Enter') { e.preventDefault(); calcular(); }
   });
 });
 </script>

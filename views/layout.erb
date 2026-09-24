@@ -6,7 +6,7 @@
   <title>Aproxima2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=2">
   <link rel="stylesheet" href="/homeStyle.css">
 </head>
 <body>
@@ -30,6 +30,19 @@
 </nav>
 
 <%= yield %>
+
+<script>
+  // Los textarea empiezan de una línea y crecen conforme se escribe
+  document.querySelectorAll('textarea').forEach(t => {
+    const ajustar = () => {
+      t.style.height = 'auto';
+      t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + 'px';
+    };
+    t.addEventListener('input', ajustar);
+    window.addEventListener('resize', ajustar);
+    ajustar();
+  });
+</script>
 
 </body>
 </html>

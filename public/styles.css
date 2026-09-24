@@ -221,7 +221,8 @@
       flex-wrap: wrap;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    textarea {
       flex: 1;
       min-width: 200px;
       border: 1px solid var(--border-dark);
@@ -235,12 +236,22 @@
       transition: border-color 0.15s, box-shadow 0.15s;
     }
 
-    input[type="text"]:focus {
+    input[type="text"]:focus,
+    textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(26,58,107,0.12);
     }
 
-    input::placeholder { color: var(--border-dark); }
+    input::placeholder,
+    textarea::placeholder { color: var(--border-dark); }
+
+    textarea {
+      display: block;
+      box-sizing: border-box;
+      line-height: 1.5;
+      resize: none;
+      overflow: hidden;
+    }
 
     .btn {
       display: inline-flex;
@@ -565,7 +576,6 @@
     .problem-header {
       padding: 0.95rem 1.4rem;
       display: flex;
-      align-items: flex-start;
       gap: 0.8rem;
       cursor: pointer;
       user-select: none;
