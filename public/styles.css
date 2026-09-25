@@ -902,3 +902,54 @@
 
     /* Símbolos dentro de etiquetas en mayúsculas (σ no debe verse como Σ) */
     .sin-mayus { text-transform: none; }
+
+    /* ── INTERRUPTOR (activar / desactivar un modo) ── */
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    .switch-track {
+      position: relative;
+      flex: 0 0 auto;
+      width: 2.3rem;
+      height: 1.25rem;
+      background: var(--border-dark);
+      border-radius: 1rem;
+      transition: background 0.15s;
+    }
+
+    .switch-track::after {
+      content: '';
+      position: absolute;
+      top: 0.15rem;
+      left: 0.15rem;
+      width: 0.95rem;
+      height: 0.95rem;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s;
+    }
+
+    .switch input:checked + .switch-track { background: var(--accent); }
+    .switch input:checked + .switch-track::after { transform: translateX(1.05rem); }
+    .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(26,58,107,0.25); }
+
+    .switch-text {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .switch input:checked ~ .switch-text { color: var(--accent); }
+
+    /* El símbolo no se parte a la mitad; si no cabe, baja el nombre */
+    .stat-cell .sc-sym { white-space: nowrap; display: inline-block; }

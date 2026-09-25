@@ -2,7 +2,7 @@
 
 <div class="page-header">
   <div class="page-header-inner">
-    <div class="breadcrumb">Inicio / Normal Estándar</div>
+    <div class="breadcrumb">Inicio / Distribuciones / Normal</div>
     <h1>Distribución Normal Estándar</h1>
     <p class="page-desc">Visualización interactiva de N(0,1) — áreas y probabilidades bajo la curva</p>
   </div>
@@ -28,13 +28,21 @@
     <div class="card-body">
 
       <div class="labeled-input">
-        <label class="input-label">Tipo de probabilidad</label>
+        <label class="switch">
+          <input type="checkbox" id="inverso" autocomplete="off" onchange="setInverso(this.checked)" />
+          <span class="switch-track"></span>
+          <span class="switch-text">Buscar <span class="sin-mayus">k</span> dado <span class="sin-mayus">p</span> (valor crítico)</span>
+        </label>
+      </div>
+
+      <div class="labeled-input">
+        <label class="input-label">Tipo de área</label>
         <div class="mode-group">
-          <button class="mode-btn active" data-mode="left"    data-icon="left"    onclick="setMode('left')">P(Z ≤ k)</button>
-          <button class="mode-btn"        data-mode="right"   data-icon="right"   onclick="setMode('right')">P(Z ≥ k)</button>
-          <button class="mode-btn"        data-mode="between" data-icon="between" onclick="setMode('between')">P(k₁ ≤ Z ≤ k₂)</button>
-          <button class="mode-btn"        data-mode="tails"   data-icon="tails"   onclick="setMode('tails')">P(|Z| ≥ k)</button>
-          <button class="mode-btn"        data-mode="inverse" onclick="setMode('inverse')">k dado P →</button>
+          <!-- data-dir: calcular p dado k · data-inv: buscar k dado p -->
+          <button class="mode-btn active" data-mode="left"    data-icon="left"    data-dir="P(Z ≤ k)"       data-inv="P(Z ≤ k) = p"       onclick="setMode('left')">P(Z ≤ k)</button>
+          <button class="mode-btn"        data-mode="right"   data-icon="right"   data-dir="P(Z ≥ k)"       data-inv="P(Z ≥ k) = p"       onclick="setMode('right')">P(Z ≥ k)</button>
+          <button class="mode-btn"        data-mode="between" data-icon="between" data-dir="P(k₁ ≤ Z ≤ k₂)" data-inv="P(−k ≤ Z ≤ k) = p" onclick="setMode('between')">P(k₁ ≤ Z ≤ k₂)</button>
+          <button class="mode-btn"        data-mode="tails"   data-icon="tails"   data-dir="P(|Z| ≥ k)"     data-inv="P(|Z| ≥ k) = p"     onclick="setMode('tails')">P(|Z| ≥ k)</button>
         </div>
       </div>
 
@@ -55,32 +63,15 @@
             <button class="inf-btn" id="inf-z2-pos" onclick="setInf('z2','pos')">+∞</button>
           </div>
         </div>
+        <div class="input-col" id="colP" style="display:none;">
+          <label class="input-label">Probabilidad <span class="sin-mayus">p</span></label>
+          <input type="number" id="pInv" step="0.001" min="0.001" max="0.999" placeholder="Ej: 0.95" />
+        </div>
         <div style="display:flex; align-items:flex-end;">
           <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
         </div>
       </div>
       <p class="field-hint" id="hintNormal">Los valores k típicos están entre −4 y 4.</p>
-
-      <div id="inputRowInverse" style="display:none;">
-        <div class="labeled-input">
-          <label class="input-label">Tipo de área</label>
-          <div class="mode-group" style="margin-top:0.4rem;">
-            <button class="mode-btn active" data-inv="left"   data-icon="left"   onclick="setInvType('left')">P(Z ≤ k) = p</button>
-            <button class="mode-btn"        data-inv="right"  data-icon="right"  onclick="setInvType('right')">P(Z ≥ k) = p</button>
-            <button class="mode-btn"        data-inv="center" data-icon="center" onclick="setInvType('center')">P(−k ≤ Z ≤ k) = p</button>
-          </div>
-        </div>
-        <div class="input-row" style="margin-top:0.8rem;">
-          <div class="input-col">
-            <label class="input-label">Probabilidad <span class="sin-mayus">p</span></label>
-            <input type="number" id="pInv" step="0.001" min="0.001" max="0.999" placeholder="Ej: 0.95" />
-          </div>
-          <div style="display:flex; align-items:flex-end;">
-            <button class="btn" onclick="calcular()">Encontrar k</button>
-          </div>
-        </div>
-        <p class="field-hint">Ingresa una probabilidad entre 0 y 1 (sin incluir los extremos).</p>
-      </div>
 
     </div>
   </div>
@@ -114,9 +105,7 @@
       <div class="card-header">
         <span class="card-title">Resultados</span>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div class="stats-grid" id="statsGrid" style="border:none; border-radius:0; margin:0;"></div>
-      </div>
+      <div class="card-body" id="statsGrid"></div>
     </div>
   </div>
 
@@ -198,35 +187,41 @@ function setInf(id, dir) {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentMode = 'left';
-let invType     = 'left';
+let inverso     = false;   // true = buscar k dado p
 let myChart     = null;
 
 function setMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  const isInverse = mode === 'inverse';
-  document.getElementById('inputRow').style.display        = isInverse ? 'none' : '';
-  document.getElementById('hintNormal').style.display      = isInverse ? 'none' : '';
-  document.getElementById('inputRowInverse').style.display = isInverse ? ''     : 'none';
-  if (!isInverse) {
-    const colZ2 = document.getElementById('colZ2');
-    const lbl   = document.getElementById('labelZ1');
-    if (mode === 'between') {
-      colZ2.style.display = '';
-      lbl.innerHTML = 'Valor de <span class="sin-mayus">k₁</span>';
-    } else {
-      colZ2.style.display = 'none';
-      lbl.innerHTML = 'Valor de <span class="sin-mayus">k</span>' + (mode === 'tails' ? ' (positivo)' : '');
-    }
-  }
+  actualizarControles();
+}
+
+function setInverso(valor) {
+  inverso = valor;
+  actualizarControles();
+}
+
+function actualizarControles() {
+  const mode = currentMode;
+  document.querySelectorAll('[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+    b.querySelector('span').textContent = inverso ? b.dataset.inv : b.dataset.dir;
+    // En modo inverso "entre k₁ y k₂" se vuelve el intervalo simétrico −k..k
+    const icono = inverso && b.dataset.mode === 'between' ? 'center' : b.dataset.icon;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = iconoCampana(icono);
+    b.querySelector('svg').replaceWith(tmp.firstElementChild);
+  });
+  document.getElementById('colZ1').style.display = inverso ? 'none' : '';
+  document.getElementById('colZ2').style.display = !inverso && mode === 'between' ? '' : 'none';
+  document.getElementById('colP').style.display  = inverso ? '' : 'none';
+  document.getElementById('labelZ1').innerHTML =
+    `Valor de <span class="sin-mayus">${mode === 'between' ? 'k₁' : 'k'}</span>` + (mode === 'tails' ? ' (positivo)' : '');
+  document.getElementById('hintNormal').textContent = inverso
+    ? 'Ejemplo: P(−k ≤ Z ≤ k) = 0.95 da k = 1.96 (valor crítico para un intervalo al 95%).'
+    : 'Los valores k típicos están entre −4 y 4.';
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('results').style.display  = 'none';
   document.querySelectorAll('.inf-btn').forEach(b => b.classList.remove('active'));
-}
-
-function setInvType(type) {
-  invType = type;
-  document.querySelectorAll('[data-inv]').forEach(b => b.classList.toggle('active', b.dataset.inv === type));
 }
 
 ponerIconos();
@@ -286,17 +281,10 @@ function buildChart(shadedSets) {
 }
 
 // ── Calculate ─────────────────────────────────────────────────────────────────
-function renderResults(shadedSets, note, stats) {
+function renderResults(shadedSets, note, grupos) {
   buildChart(shadedSets);
   document.getElementById('chartNote').textContent = note;
-  const grid = document.getElementById('statsGrid');
-  grid.innerHTML = '';
-  stats.forEach(s => {
-    const cell = document.createElement('div');
-    cell.className = 'stat-cell' + (s.featured ? ' featured' : '');
-    cell.innerHTML = `<div class="sc-label">${s.label}</div><div class="sc-value">${s.value}</div>`;
-    grid.appendChild(cell);
-  });
+  document.getElementById('statsGrid').innerHTML = `<div class="res-split">${grupos.join('')}</div>`;
   document.getElementById('results').style.display = 'block';
 }
 
@@ -307,42 +295,50 @@ function calcular() {
   const fmt6 = n => parseFloat(n.toFixed(6)).toString();
   const fmt4 = n => n.toFixed(4);
   const fmtZ = n => !isFinite(n) ? (n > 0 ? '∞' : '−∞') : parseFloat(n.toFixed(4)).toString();
+  const pct  = n => fmt(n * 100, 4) + '%';
+  const alto = k => isFinite(k) ? fmt(normalPDF(k), 4) : '0';
 
-  if (currentMode === 'inverse') {
+  if (inverso) {
+    const invType = currentMode === 'between' ? 'center' : currentMode;
     const pval = parseFloat(document.getElementById('pInv').value);
     if (isNaN(pval) || pval <= 0 || pval >= 1) {
       mostrarError('Ingresa una probabilidad entre 0 y 1 (sin incluir extremos).'); return;
     }
-    let zResult, shadedSets, note, stats;
+    let k, shadedSets, simbolo, verif;
     if (invType === 'left') {
-      zResult    = normalQuantile(pval);
-      shadedSets = [genCurve(-4, zResult, 0.02)];
-      note       = `P(Z ≤ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
-      stats      = [
-        { label: 'p ingresada',           value: pval,              featured: false },
-        { label: 'k  ← resultado',        value: fmtZ(zResult),     featured: true  },
-        { label: 'Verificación P(Z ≤ k)', value: fmt6(cdf(zResult)), featured: false },
-      ];
+      k = normalQuantile(pval);
+      shadedSets = [genCurve(-4, chartClamp(k), 0.02)];
+      simbolo = 'P(Z ≤ k)'; verif = cdf(k);
     } else if (invType === 'right') {
-      zResult    = normalQuantile(1 - pval);
-      shadedSets = [genCurve(zResult, 4, 0.02)];
-      note       = `P(Z ≥ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
-      stats      = [
-        { label: 'p ingresada',           value: pval,                  featured: false },
-        { label: 'k  ← resultado',        value: fmtZ(zResult),         featured: true  },
-        { label: 'Verificación P(Z ≥ k)', value: fmt6(1 - cdf(zResult)), featured: false },
-      ];
+      k = normalQuantile(1 - pval);
+      shadedSets = [genCurve(chartClamp(k), 4, 0.02)];
+      simbolo = 'P(Z ≥ k)'; verif = 1 - cdf(k);
+    } else if (invType === 'tails') {
+      // p se reparte en las dos colas: p/2 en cada una
+      k = normalQuantile(1 - pval / 2);
+      shadedSets = [genCurve(-4, chartClamp(-k), 0.02), genCurve(chartClamp(k), 4, 0.02)];
+      simbolo = 'P(|Z| ≥ k)'; verif = 2 * (1 - cdf(k));
     } else {
-      zResult    = normalQuantile((1 + pval) / 2);
-      shadedSets = [genCurve(-zResult, zResult, 0.02)];
-      note       = `P(−${fmtZ(zResult)} ≤ Z ≤ ${fmtZ(zResult)}) = ${fmt4(pval)}`;
-      stats      = [
-        { label: 'p ingresada',                value: pval,                                    featured: false },
-        { label: '±k  ← resultado',            value: `±${fmtZ(zResult)}`,                     featured: true  },
-        { label: 'Verificación P(−k ≤ Z ≤ k)', value: fmt6(cdf(zResult) - cdf(-zResult)),      featured: false },
-      ];
+      k = normalQuantile((1 + pval) / 2);
+      shadedSets = [genCurve(chartClamp(-k), chartClamp(k), 0.02)];
+      simbolo = 'P(−k ≤ Z ≤ k)'; verif = cdf(k) - cdf(-k);
     }
-    renderResults(shadedSets, note, stats);
+    const pm = invType === 'center' || invType === 'tails' ? '±' : '';
+    const note = `Área sombreada: ${simbolo.replace(/k/g, fmtZ(k))} = ${fmt4(pval)}`;
+    renderResults(shadedSets, note, [
+      grupoRes('Parámetros', [
+        celda('p', 'probabilidad dada', pval),
+        celda('1 − p', 'área fuera', fmt6(1 - pval)),
+      ]),
+      grupoRes('Resultado', [
+        celda(pm + 'k', 'valor crítico', pm + fmtZ(k), true),
+        celda(simbolo, 'verificación', fmt6(verif)),
+      ]),
+      grupoRes('En porcentaje', [
+        celda('p', 'dentro del área', pct(pval)),
+        celda('1 − p', 'fuera del área', pct(1 - pval)),
+      ]),
+    ]);
     return;
   }
 
@@ -356,48 +352,40 @@ function calcular() {
   }
   if (currentMode === 'tails' && z1val <= 0) { mostrarError('Ingresa un valor k positivo para cola doble.'); return; }
 
-  let shadedSets = [], stats = [], note = '';
-
+  let prob, shadedSets, simbolo, texto, entrada;
   if (currentMode === 'left') {
-    const prob = cdf(z1val);
+    prob = cdf(z1val);
     shadedSets = [genCurve(-4, chartClamp(z1val), 0.02)];
-    note  = `Área sombreada: P(Z ≤ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'k', value: fmtZ(z1val), featured: false },
-      { label: 'P(Z ≤ k)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z > k)  complemento',  value: fmt6(1 - prob), featured: false },
-    ];
+    simbolo = 'P(Z ≤ k)'; texto = `P(Z ≤ ${fmtZ(z1val)})`;
+    entrada = [celda('k', 'valor dado', fmtZ(z1val)), celda('f(k)', 'altura de la curva', alto(z1val))];
   } else if (currentMode === 'right') {
-    const prob = 1 - cdf(z1val);
+    prob = 1 - cdf(z1val);
     shadedSets = [genCurve(chartClamp(z1val), 4, 0.02)];
-    note  = `Área sombreada: P(Z ≥ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'k', value: fmtZ(z1val), featured: false },
-      { label: 'P(Z ≥ k)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z < k)  complemento',  value: fmt6(1 - prob), featured: false },
-    ];
+    simbolo = 'P(Z ≥ k)'; texto = `P(Z ≥ ${fmtZ(z1val)})`;
+    entrada = [celda('k', 'valor dado', fmtZ(z1val)), celda('f(k)', 'altura de la curva', alto(z1val))];
   } else if (currentMode === 'between') {
-    const prob = cdf(z2val) - cdf(z1val);
+    prob = cdf(z2val) - cdf(z1val);
     shadedSets = [genCurve(chartClamp(z1val), chartClamp(z2val), 0.02)];
-    note  = `Área sombreada: P(${fmtZ(z1val)} ≤ Z ≤ ${fmtZ(z2val)}) = ${fmt4(prob)}`;
-    stats = [
-      { label: 'k₁', value: fmtZ(z1val), featured: false },
-      { label: 'k₂', value: fmtZ(z2val), featured: false },
-      { label: 'P(k₁ ≤ Z ≤ k₂)  ← resultado', value: fmt6(prob), featured: true },
-      { label: 'P(Z < k₁) + P(Z > k₂)',         value: fmt6(1 - prob), featured: false },
-    ];
+    simbolo = 'P(k₁ ≤ Z ≤ k₂)'; texto = `P(${fmtZ(z1val)} ≤ Z ≤ ${fmtZ(z2val)})`;
+    entrada = [celda('k₁', 'límite inferior', fmtZ(z1val)), celda('k₂', 'límite superior', fmtZ(z2val))];
   } else {
-    const prob = 2 * (1 - cdf(z1val));
+    prob = 2 * (1 - cdf(z1val));
     shadedSets = [genCurve(-4, chartClamp(-z1val), 0.02), genCurve(chartClamp(z1val), 4, 0.02)];
-    note  = `Área sombreada: P(|Z| ≥ ${fmtZ(z1val)}) = ${fmt4(prob)}`;
-    stats = [
-      { label: '±k', value: `±${fmtZ(z1val)}`, featured: false },
-      { label: 'P(|Z| ≥ k)  ← resultado (dos colas)', value: fmt6(prob), featured: true },
-      { label: 'P(|Z| < k)  complemento',              value: fmt6(1 - prob), featured: false },
-    ];
+    simbolo = 'P(|Z| ≥ k)'; texto = `P(|Z| ≥ ${fmtZ(z1val)})`;
+    entrada = [celda('±k', 'valor dado', '±' + fmtZ(z1val)), celda('f(k)', 'altura de la curva', alto(z1val))];
   }
 
-  renderResults(shadedSets, note, stats);
+  renderResults(shadedSets, `Área sombreada: ${texto} = ${fmt4(prob)}`, [
+    grupoRes('Parámetros', entrada),
+    grupoRes('Resultado', [
+      celda(simbolo, 'probabilidad', fmt6(prob), true),
+      celda('1 − P', 'complemento', fmt6(1 - prob)),
+    ]),
+    grupoRes('En porcentaje', [
+      celda('P', 'dentro del área', pct(prob)),
+      celda('1 − P', 'fuera del área', pct(1 - prob)),
+    ]),
+  ]);
 }
 
 function mostrarError(msg) {

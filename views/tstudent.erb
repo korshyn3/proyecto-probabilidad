@@ -28,24 +28,21 @@
     <div class="card-body">
 
       <div class="labeled-input">
-        <label class="input-label">Tipo de probabilidad</label>
-        <div class="mode-group">
-          <button class="mode-btn active" data-mode="left"    data-icon="left"    onclick="setMode('left')">P(T ≤ t)</button>
-          <button class="mode-btn"        data-mode="right"   data-icon="right"   onclick="setMode('right')">P(T ≥ t)</button>
-          <button class="mode-btn"        data-mode="between" data-icon="between" onclick="setMode('between')">P(t₁ ≤ T ≤ t₂)</button>
-          <button class="mode-btn"        data-mode="tails"   data-icon="tails"   onclick="setMode('tails')">P(|T| ≥ t)</button>
-          <button class="mode-btn"        data-mode="inverse"                     onclick="setMode('inverse')">t dado P →</button>
-        </div>
+        <label class="switch">
+          <input type="checkbox" id="inverso" autocomplete="off" onchange="setInverso(this.checked)" />
+          <span class="switch-track"></span>
+          <span class="switch-text">Buscar <span class="sin-mayus">t</span> dado <span class="sin-mayus">p</span> (valor crítico)</span>
+        </label>
       </div>
 
-      <div id="inputRowInverse" style="display:none;">
-        <div class="labeled-input">
-          <label class="input-label">Tipo de área</label>
-          <div class="mode-group" style="margin-top:0.4rem;">
-            <button class="mode-btn active" data-inv="left"   data-icon="left"   onclick="setInvType('left')">P(T ≤ t) = p</button>
-            <button class="mode-btn"        data-inv="right"  data-icon="right"  onclick="setInvType('right')">P(T ≥ t) = p</button>
-            <button class="mode-btn"        data-inv="center" data-icon="center" onclick="setInvType('center')">P(−t ≤ T ≤ t) = p</button>
-          </div>
+      <div class="labeled-input">
+        <label class="input-label">Tipo de área</label>
+        <div class="mode-group">
+          <!-- data-dir: calcular p dado t · data-inv: buscar t dado p -->
+          <button class="mode-btn active" data-mode="left"    data-icon="left"    data-dir="P(T ≤ t)"       data-inv="P(T ≤ t) = p"       onclick="setMode('left')">P(T ≤ t)</button>
+          <button class="mode-btn"        data-mode="right"   data-icon="right"   data-dir="P(T ≥ t)"       data-inv="P(T ≥ t) = p"       onclick="setMode('right')">P(T ≥ t)</button>
+          <button class="mode-btn"        data-mode="between" data-icon="between" data-dir="P(t₁ ≤ T ≤ t₂)" data-inv="P(−t ≤ T ≤ t) = p" onclick="setMode('between')">P(t₁ ≤ T ≤ t₂)</button>
+          <button class="mode-btn"        data-mode="tails"   data-icon="tails"   data-dir="P(|T| ≥ t)"     data-inv="P(|T| ≥ t) = p"     onclick="setMode('tails')">P(|T| ≥ t)</button>
         </div>
       </div>
 
@@ -212,29 +209,40 @@ function genCurva(f, desde, hasta, paso) {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentMode = 'left';
-let invType = 'left';
+let inverso = false;   // true = buscar t dado p
 let myChart = null;
 
 function setMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  const inv = mode === 'inverse';
-  document.getElementById('inputRowInverse').style.display = inv ? '' : 'none';
-  document.getElementById('colT1').style.display = inv ? 'none' : '';
-  document.getElementById('colT2').style.display = mode === 'between' ? '' : 'none';
-  document.getElementById('colP').style.display  = inv ? '' : 'none';
+  actualizarControles();
+}
+
+function setInverso(valor) {
+  inverso = valor;
+  actualizarControles();
+}
+
+function actualizarControles() {
+  const mode = currentMode;
+  document.querySelectorAll('[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+    b.querySelector('span').textContent = inverso ? b.dataset.inv : b.dataset.dir;
+    // En modo inverso "entre t₁ y t₂" se vuelve el intervalo simétrico −t..t
+    const icono = inverso && b.dataset.mode === 'between' ? 'center' : b.dataset.icon;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = iconoCampana(icono);
+    b.querySelector('svg').replaceWith(tmp.firstElementChild);
+  });
+  document.getElementById('colT1').style.display = inverso ? 'none' : '';
+  document.getElementById('colT2').style.display = !inverso && mode === 'between' ? '' : 'none';
+  document.getElementById('colP').style.display  = inverso ? '' : 'none';
   document.getElementById('labelT1').innerHTML =
     `Valor de <span class="sin-mayus">${mode === 'between' ? 't₁' : 't'}</span>` + (mode === 'tails' ? ' (positivo)' : '');
-  document.getElementById('hint').textContent = inv
+  document.getElementById('hint').textContent = inverso
     ? 'Ejemplo: ν = 9 y P(−t ≤ T ≤ t) = 0.95 da t = 2.262 (t crítico para un intervalo al 95%).'
     : 'Ejemplo: con ν = 9, t = 2.262 deja 2.5% en cada cola (el t crítico de un intervalo al 95%).';
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('results').style.display  = 'none';
-}
-
-function setInvType(type) {
-  invType = type;
-  document.querySelectorAll('[data-inv]').forEach(b => b.classList.toggle('active', b.dataset.inv === type));
 }
 
 ponerIconos();
@@ -283,7 +291,8 @@ function calcular() {
   const f4  = n => fmt(n, 4);
   let zonas, nota, grupos, marcas;
 
-  if (currentMode === 'inverse') {
+  if (inverso) {
+    const invType = currentMode === 'between' ? 'center' : currentMode;
     const p = parseFloat(document.getElementById('pInv').value);
     if (isNaN(p) || p <= 0 || p >= 1) { mostrarError('Ingresa una probabilidad entre 0 y 1 (sin incluir extremos).'); return; }
     let t, z, texto, verif;
@@ -293,11 +302,15 @@ function calcular() {
     } else if (invType === 'right') {
       t = tInv(1 - p, df); z = normalInv(1 - p);
       zonas = [[t, Infinity]]; texto = `P(T ≥ ${f4(t)}) = ${p}`; verif = 1 - cdf(t);
+    } else if (invType === 'tails') {
+      // p se reparte en las dos colas: p/2 en cada una
+      t = tInv(1 - p / 2, df); z = normalInv(1 - p / 2);
+      zonas = [[-Infinity, -t], [t, Infinity]]; texto = `P(|T| ≥ ${f4(t)}) = ${p}`; verif = 2 * (1 - cdf(t));
     } else {
       t = tInv((1 + p) / 2, df); z = normalInv((1 + p) / 2);
       zonas = [[-t, t]]; texto = `P(−${f4(t)} ≤ T ≤ ${f4(t)}) = ${p}`; verif = cdf(t) - cdf(-t);
     }
-    const pm = invType === 'center' ? '±' : '';
+    const pm = invType === 'center' || invType === 'tails' ? '±' : '';
     nota = `Área sombreada: ${texto}`;
     marcas = [Math.abs(t)];
     grupos = [
