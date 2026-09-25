@@ -1,0 +1,274 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Regresión / Múltiple</div>
+    <h1>Regresión Lineal Múltiple</h1>
+    <p class="page-desc">Explica y con varias variables: ŷ = b₀ + b₁x₁ + b₂x₂ + … + bₖxₖ</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Coeficientes (forma matricial)</div>
+      <div class="f-expr" data-tex="\hat{\boldsymbol\beta} = (X^{\mathsf T} X)^{-1} X^{\mathsf T} \mathbf{y}">β = (XᵀX)⁻¹ Xᵀy</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">R² ajustado</div>
+      <div class="f-expr" data-tex="R^2_{aj} = 1 - (1 - R^2)\,\frac{n - 1}{n - k - 1}">R²aj = 1 − (1 − R²)(n − 1)/(n − k − 1)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Datos</span>
+    </div>
+    <div class="card-body">
+      <div class="dyn-row">
+        <span class="dyn-label">y</span>
+        <textarea id="ys" rows="1" placeholder="Ej: 10, 12, 15, 19, 21, 25, 26, 30"></textarea>
+        <span style="flex:0 0 2rem;"></span>
+      </div>
+      <div id="variables"></div>
+      <div class="btn-row">
+        <button class="btn btn-sec" onclick="agregarVariable()">+ Agregar variable x</button>
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+        <label class="mini-field">α = <input type="text" id="alfa" value="0.05" /></label>
+      </div>
+      <p class="field-hint">Cada fila es una variable con sus n valores, en el mismo orden que y. Se necesitan al menos k + 2 observaciones (k = número de variables x).</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Modelo ajustado</span>
+      </div>
+      <div class="card-body">
+        <div class="paso-tex" id="ecuacion" style="margin-top:0; margin-bottom:1rem;"></div>
+        <div id="statsGrid"></div>
+        <div id="decision"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Coeficientes</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="txt">Coeficiente</th>
+                <th>Estimación</th>
+                <th>Error estándar</th>
+                <th class="math">t</th>
+                <th>p-valor</th>
+                <th>¿Significativo?</th>
+              </tr>
+            </thead>
+            <tbody id="coefBody"></tbody>
+          </table>
+        </div>
+        <p class="chart-note" style="padding:0.2rem 1.4rem 1rem;" id="coefNota"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Tabla ANOVA de la regresión</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="txt">Fuente de variación</th>
+                <th>SC</th>
+                <th>gl</th>
+                <th>CM</th>
+                <th>F</th>
+                <th>p-valor</th>
+              </tr>
+            </thead>
+            <tbody id="anovaBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="res-split" style="grid-template-columns: 1fr 1fr; margin-bottom: 1.2rem;">
+      <div class="card" style="margin:0;">
+        <div class="card-header"><span class="card-title">Observado vs predicho</span></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chartPred"></canvas></div>
+          <p class="chart-note">Entre más cerca de la diagonal ŷ = y, mejor el ajuste.</p>
+        </div>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="card-header"><span class="card-title">Residuos</span></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chartRes"></canvas></div>
+          <p class="chart-note">Deben repartirse al azar alrededor de 0.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Valores ajustados</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead id="datosHead"></thead>
+            <tbody id="datosBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let chartPred = null, chartRes = null;
+
+const SUB = n => String(n).split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[c]).join('');
+const EJEMPLO_X = ['1, 2, 3, 4, 5, 6, 7, 8', '5, 3, 6, 4, 7, 5, 8, 6', '2, 2, 3, 3, 4, 4, 5, 5'];
+
+function agregarVariable() {
+  const cont = document.getElementById('variables');
+  const fila = document.createElement('div');
+  fila.className = 'dyn-row';
+  fila.innerHTML = `
+    <span class="dyn-label"></span>
+    <textarea rows="1" placeholder="Ej: ${EJEMPLO_X[cont.children.length % 3]}"></textarea>
+    <button class="btn-quitar" title="Quitar variable" onclick="quitarVariable(this)">×</button>`;
+  fila.querySelector('textarea').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); calcular(); }
+  });
+  cont.appendChild(fila);
+  renumerar();
+}
+
+function quitarVariable(btn) {
+  btn.closest('.dyn-row').remove();
+  renumerar();
+}
+
+function renumerar() {
+  const filas = document.querySelectorAll('#variables .dyn-row');
+  filas.forEach((f, i) => {
+    f.querySelector('.dyn-label').textContent = 'x' + SUB(i + 1);
+    f.querySelector('.btn-quitar').disabled = filas.length <= 1;
+  });
+}
+
+async function calcular() {
+  const xs = [...document.querySelectorAll('#variables textarea')].map(t => t.value.trim()).filter(v => v);
+  if (!xs.length) { mostrarError('Llena al menos una variable x.'); return; }
+  const d = await enviar('/calcular_regresion_multiple', {
+    ys: document.getElementById('ys').value.trim(), xs: JSON.stringify(xs), alfa: document.getElementById('alfa').value.trim(),
+  }, document.getElementById('btnCalc'));
+  if (d) renderResults(d);
+}
+
+function renderResults(d) {
+  const b = d.coefs.map(c => c.b);
+  const terminos = b.slice(1).map((v, j) => ({ signo: v < 0 ? '-' : '+', abs: fmt(Math.abs(v), 4), j: j + 1 }));
+  tex(document.getElementById('ecuacion'),
+    `\\hat{y} = ${fmt(b[0], 4)} ` + terminos.map(t => `${t.signo} ${t.abs}\\,x_{${t.j}}`).join(' '),
+    `ŷ = ${fmt(b[0], 4)} ` + terminos.map(t => `${t.signo === '-' ? '−' : '+'} ${t.abs}x${SUB(t.j)}`).join(' '));
+
+  const f = d.f === null ? '∞' : fmt(d.f, 4);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Ajuste', [
+        celda('R²', `explica el ${fmt(d.r2 * 100, 2)}% de la variación de y`, fmt(d.r2, 4), true),
+        celda('R²<sub>aj</sub>', 'ajustado por número de variables', fmt(d.r2_aj, 4)),
+      ])}
+      ${grupoRes('Prueba F global', [
+        celda('F', `calculado · crítico ${fmt(d.f_crit, 4)}`, f, true),
+        celda('p', 'p-valor', fmtP(d.p_f)),
+      ])}
+      ${grupoRes('Datos', [
+        celda('sₑ', 'error estándar de estimación', fmt(d.se, 4)),
+        celda('n , k', 'observaciones , variables x', `${d.n} , ${d.k}`),
+      ])}
+    </div>`;
+
+  const h0 = '<span style="text-transform:none">H₀: β₁ = … = βₖ = 0</span>';
+  document.getElementById('decision').innerHTML = d.rechaza
+    ? conclusion(true, `Se rechaza ${h0}`, `F = ${f} &gt; ${fmt(d.f_crit, 4)} (p = ${fmtP(d.p_f)} &lt; ${d.alfa}). <strong>El modelo es significativo</strong>: al menos una variable x ayuda a explicar y.`)
+    : conclusion(false, `No se rechaza ${h0}`, `F = ${f} ≤ ${fmt(d.f_crit, 4)} (p = ${fmtP(d.p_f)} ≥ ${d.alfa}). No hay evidencia de que las variables x expliquen a y.`);
+
+  document.getElementById('coefBody').innerHTML = d.coefs.map((c, j) => `
+    <tr>
+      <td class="txt">${j === 0 ? 'b₀ (intersección)' : `b${SUB(j)} (x${SUB(j)})`}</td>
+      <td class="hl">${fmt(c.b)}</td>
+      <td>${fmt(c.se)}</td>
+      <td>${c.t === null ? '∞' : fmt(c.t, 4)}</td>
+      <td>${fmtP(c.p)}</td>
+      <td style="color:${c.significativo ? 'var(--green)' : 'var(--muted)'}; font-weight:600;">${c.significativo ? 'Sí' : 'No'}</td>
+    </tr>`).join('');
+  document.getElementById('coefNota').textContent =
+    `Cada coeficiente se prueba con H₀: βⱼ = 0 usando t con ${d.gl_e} gl; es significativo si |t| > ${fmt(d.t_crit, 4)} (p < ${d.alfa}).`;
+
+  document.getElementById('anovaBody').innerHTML = `
+    <tr><td class="txt">Regresión</td><td>${fmt(d.scr)}</td><td>${d.gl_r}</td><td>${fmt(d.cmr)}</td><td class="hl">${f}</td><td class="hl">${fmtP(d.p_f)}</td></tr>
+    <tr><td class="txt">Error (residuos)</td><td>${fmt(d.sce)}</td><td>${d.gl_e}</td><td>${fmt(d.cme)}</td><td></td><td></td></tr>
+    <tr class="sum-row"><td class="txt">Total</td><td>${fmt(d.sct)}</td><td>${d.gl_t}</td><td></td><td></td><td></td></tr>`;
+
+  document.getElementById('datosHead').innerHTML = `<tr><th class="math">i</th>` +
+    d.pasos[0].xs.map((_, j) => `<th class="math">x${SUB(j + 1)}</th>`).join('') +
+    `<th class="math">y</th><th class="math">ŷ</th><th class="math">e = y − ŷ</th></tr>`;
+  document.getElementById('datosBody').innerHTML = d.pasos.map((p, i) => `
+    <tr><td>${i + 1}</td>${p.xs.map(x => `<td>${fmt(x)}</td>`).join('')}<td>${fmt(p.y)}</td><td>${fmt(p.y_hat)}</td><td>${fmt(p.residuo)}</td></tr>`).join('');
+
+  document.getElementById('results').style.display = 'block';
+  graficar(d);
+}
+
+function graficar(d) {
+  const ys = d.pasos.flatMap(p => [p.y, p.y_hat]);
+  const lo = Math.min(...ys), hi = Math.max(...ys), m = (hi - lo) * 0.05 || 1;
+  const opciones = (ejes, etiqueta) => ({
+    responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: etiqueta } } },
+    scales: ejes,
+  });
+
+  if (chartPred) chartPred.destroy();
+  chartPred = new Chart(document.getElementById('chartPred'), {
+    type: 'scatter',
+    data: { datasets: [
+      { data: d.pasos.map(p => ({ x: p.y, y: p.y_hat })), backgroundColor: 'rgba(26,58,107,0.6)', pointRadius: 5 },
+      { data: [{ x: lo - m, y: lo - m }, { x: hi + m, y: hi + m }], borderColor: '#b5651d', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, showLine: true },
+    ] },
+    options: opciones(ejesGrafica('y observado', 'ŷ predicho'), c => `y = ${fmt(c.parsed.x, 4)}, ŷ = ${fmt(c.parsed.y, 4)}`),
+  });
+
+  const yh = d.pasos.map(p => p.y_hat);
+  const lo2 = Math.min(...yh), hi2 = Math.max(...yh), m2 = (hi2 - lo2) * 0.05 || 1;
+  if (chartRes) chartRes.destroy();
+  chartRes = new Chart(document.getElementById('chartRes'), {
+    type: 'scatter',
+    data: { datasets: [
+      { data: d.pasos.map(p => ({ x: p.y_hat, y: p.residuo })), backgroundColor: 'rgba(26,58,107,0.6)', pointRadius: 5 },
+      { data: [{ x: lo2 - m2, y: 0 }, { x: hi2 + m2, y: 0 }], borderColor: '#999', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, showLine: true },
+    ] },
+    options: opciones(ejesGrafica('ŷ predicho', 'residuo e'), c => `ŷ = ${fmt(c.parsed.x, 4)}, e = ${fmt(c.parsed.y, 4)}`),
+  });
+}
+
+agregarVariable();
+agregarVariable();
+enterCalcula(['ys', 'alfa'], calcular);
+</script>

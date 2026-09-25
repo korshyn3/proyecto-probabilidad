@@ -40,7 +40,7 @@
 
       <div class="input-row" id="inputRow">
         <div class="input-col" id="colZ1">
-          <label class="input-label" id="labelZ1">Valor de k</label>
+          <label class="input-label" id="labelZ1">Valor de <span class="sin-mayus">k</span></label>
           <input type="text" id="z1" placeholder="Ej: 1.65" />
           <div class="inf-btns">
             <button class="inf-btn" id="inf-z1-neg" onclick="setInf('z1','neg')">−∞</button>
@@ -48,7 +48,7 @@
           </div>
         </div>
         <div class="input-col" id="colZ2" style="display:none;">
-          <label class="input-label">Valor de k₂</label>
+          <label class="input-label">Valor de <span class="sin-mayus">k₂</span></label>
           <input type="text" id="z2" placeholder="Ej: 2.33" />
           <div class="inf-btns">
             <button class="inf-btn" id="inf-z2-neg" onclick="setInf('z2','neg')">−∞</button>
@@ -72,7 +72,7 @@
         </div>
         <div class="input-row" style="margin-top:0.8rem;">
           <div class="input-col">
-            <label class="input-label">Probabilidad p</label>
+            <label class="input-label">Probabilidad <span class="sin-mayus">p</span></label>
             <input type="number" id="pInv" step="0.001" min="0.001" max="0.999" placeholder="Ej: 0.95" />
           </div>
           <div style="display:flex; align-items:flex-end;">
@@ -213,10 +213,10 @@ function setMode(mode) {
     const lbl   = document.getElementById('labelZ1');
     if (mode === 'between') {
       colZ2.style.display = '';
-      lbl.textContent = 'Valor de k₁';
+      lbl.innerHTML = 'Valor de <span class="sin-mayus">k₁</span>';
     } else {
       colZ2.style.display = 'none';
-      lbl.textContent = mode === 'tails' ? 'Valor de k (positivo)' : 'Valor de k';
+      lbl.innerHTML = 'Valor de <span class="sin-mayus">k</span>' + (mode === 'tails' ? ' (positivo)' : '');
     }
   }
   document.getElementById('errorBox').style.display = 'none';
@@ -229,39 +229,7 @@ function setInvType(type) {
   document.querySelectorAll('[data-inv]').forEach(b => b.classList.toggle('active', b.dataset.inv === type));
 }
 
-// ── Íconos: mini campana con el área sombreada de cada tipo ──────────────────
-const AREAS_ICONO = {
-  left:    [[-4, 0.5]],
-  right:   [[0.5, 4]],
-  between: [[-0.8, 1.1]],
-  tails:   [[-4, -1.2], [1.2, 4]],
-  center:  [[-1, 1]],
-};
-
-function iconoCampana(tipo) {
-  const W = 64, H = 26;
-  const px = z => (W / 2 + z * W / 8).toFixed(1);
-  const py = z => (H - 1 - (H - 4) * Math.exp(-z * z / 2)).toFixed(1);
-  const tramo = (a, b) => {
-    const pts = [];
-    for (let z = a; z < b; z += 0.1) pts.push(`${px(z)},${py(z)}`);
-    pts.push(`${px(b)},${py(b)}`);
-    return pts.join(' L');
-  };
-  const areas = AREAS_ICONO[tipo].map(([a, b]) =>
-    `<path d="M${px(a)},${H - 1} L${tramo(a, b)} L${px(b)},${H - 1} Z" fill="currentColor" fill-opacity="0.35"/>`
-  ).join('');
-  return `<svg class="mode-icon" viewBox="0 0 ${W} ${H}" aria-hidden="true">
-    ${areas}
-    <path d="M${tramo(-4, 4)}" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <line x1="0" y1="${H - 1}" x2="${W}" y2="${H - 1}" stroke="currentColor" stroke-width="1"/>
-  </svg>`;
-}
-
-document.querySelectorAll('[data-icon]').forEach(b => {
-  b.classList.add('has-icon');
-  b.innerHTML = iconoCampana(b.dataset.icon) + `<span>${b.innerHTML}</span>`;
-});
+ponerIconos();
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
 function buildChart(shadedSets) {

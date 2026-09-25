@@ -1,0 +1,245 @@
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Inferencia / Tamaño de muestra</div>
+    <h1>Tamaño de Muestra</h1>
+    <p class="page-desc">Cuántos datos necesitas para estimar una media o una proporción con cierto error y confianza — o qué error tendrás con n datos</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Para estimar una media (<span class="sin-mayus">σ</span> conocida)</div>
+      <div class="f-expr" data-tex="\begin{aligned} n &= \left(\frac{z_{\alpha/2}\,\sigma}{E}\right)^2 \\[4pt] E &= \frac{z_{\alpha/2}\,\sigma}{\sqrt{n}} \end{aligned}">n = (z·σ / E)²  ⇔  E = z·σ / √n</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Para estimar una proporción</div>
+      <div class="f-expr" data-tex="\begin{aligned} n &= \frac{z_{\alpha/2}^2\; p\,(1 - p)}{E^2} \\[4pt] E &= z_{\alpha/2}\sqrt{\frac{p\,(1 - p)}{n}} \end{aligned}">n = z²·p(1 − p) / E²  ⇔  E = z·√(p(1 − p)/n)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Parámetros</span>
+    </div>
+    <div class="card-body">
+
+      <div class="labeled-input">
+        <label class="input-label">¿Qué quieres estimar?</label>
+        <div class="mode-group">
+          <button class="mode-btn active" data-tipo="media"      onclick="setTipo('media')">Media μ</button>
+          <button class="mode-btn"        data-tipo="proporcion" onclick="setTipo('proporcion')">Proporción p</button>
+        </div>
+      </div>
+
+      <div class="labeled-input">
+        <label class="input-label">¿Qué quieres calcular?</label>
+        <div class="mode-group">
+          <button class="mode-btn active" data-buscar="n"     onclick="setBuscar('n')">n dado E</button>
+          <button class="mode-btn"        data-buscar="error" onclick="setBuscar('error')">E dado n</button>
+        </div>
+      </div>
+
+      <div class="input-row" style="align-items:flex-start;">
+        <div class="input-col">
+          <label class="input-label">Nivel de confianza (%)</label>
+          <input type="text" id="confianza" value="95" />
+          <div class="inf-btns">
+            <button class="inf-btn" onclick="setConfianza(90)">90%</button>
+            <button class="inf-btn active" onclick="setConfianza(95)">95%</button>
+            <button class="inf-btn" onclick="setConfianza(99)">99%</button>
+          </div>
+        </div>
+        <div class="input-col" id="colError">
+          <label class="input-label">Error máximo E</label>
+          <input type="text" id="error" placeholder="Ej: 2" />
+        </div>
+        <div class="input-col" id="colN" style="display:none;">
+          <label class="input-label">Tamaño de muestra <span class="sin-mayus">n</span></label>
+          <input type="text" id="n" placeholder="Ej: 100" />
+        </div>
+        <div class="input-col" id="colSigma">
+          <label class="input-label">Desviación estándar <span class="sin-mayus">σ</span></label>
+          <input type="text" id="sigma" placeholder="Ej: 10" />
+        </div>
+        <div class="input-col" id="colP" style="display:none;">
+          <label class="input-label">Proporción estimada <span class="sin-mayus">p</span></label>
+          <input type="text" id="p" placeholder="Vacío = 0.5" />
+        </div>
+        <div class="input-col">
+          <label class="input-label">Población N (opcional)</label>
+          <input type="text" id="poblacion" placeholder="Vacío = infinita" />
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+      </div>
+      <p class="field-hint" id="hint"></p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultados</span>
+      </div>
+      <div class="card-body">
+        <div id="statsGrid"></div>
+        <div class="paso-tex" id="pasoTex"></div>
+        <div class="paso-tex" id="pasoTexN" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let tipo = 'media';
+let buscar = 'n';
+
+const HINTS = {
+  media: 'E y σ van en las mismas unidades que los datos. Si σ es desconocida, usa la desviación de un estudio piloto.',
+  proporcion: 'E y p van como decimales (5% = 0.05). Si no tienes una estimación de p, déjalo vacío: 0.5 da el tamaño más conservador.',
+};
+
+function setTipo(t) {
+  tipo = t;
+  document.querySelectorAll('[data-tipo]').forEach(b => b.classList.toggle('active', b.dataset.tipo === t));
+  document.getElementById('colSigma').style.display = t === 'media' ? '' : 'none';
+  document.getElementById('colP').style.display     = t === 'media' ? 'none' : '';
+  document.getElementById('error').placeholder      = t === 'media' ? 'Ej: 2' : 'Ej: 0.05';
+  document.getElementById('hint').textContent       = HINTS[t];
+  ocultarResultados();
+}
+
+function setBuscar(b) {
+  buscar = b;
+  document.querySelectorAll('[data-buscar]').forEach(x => x.classList.toggle('active', x.dataset.buscar === b));
+  document.getElementById('colError').style.display = b === 'n' ? '' : 'none';
+  document.getElementById('colN').style.display     = b === 'n' ? 'none' : '';
+  ocultarResultados();
+}
+
+function ocultarResultados() {
+  document.getElementById('results').style.display  = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+const val = id => document.getElementById(id).value.trim();
+
+function setConfianza(c) {
+  document.getElementById('confianza').value = c;
+  marcarConfianza();
+}
+
+function marcarConfianza() {
+  document.querySelectorAll('.inf-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent === val('confianza') + '%'));
+}
+
+async function calcular() {
+  const d = await enviar('/calcular_tamano', {
+    tipo, buscar, confianza: val('confianza'), error: val('error'), n: val('n'),
+    sigma: val('sigma'), p: val('p'), poblacion: val('poblacion'),
+  }, document.getElementById('btnCalc'));
+  if (d) (d.buscar === 'n' ? renderResults(d) : renderError(d));
+}
+
+function renderResults(d) {
+  const conN = d.poblacion !== null;
+  const z  = fmt(d.z, 4);
+  const n0 = fmt(d.n0, 4);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Valor crítico', [
+        celda('z<sub>α/2</sub>', 'normal estándar', z),
+        celda('α', 'nivel de significancia', fmt(1 - parseFloat(val('confianza')) / 100, 4)),
+      ])}
+      ${grupoRes('Cálculo', [
+        celda('n₀', 'población infinita', n0),
+        conN ? celda('n', `corregido con N = ${d.poblacion}`, fmt(d.n_exacto, 4))
+             : celda('N', 'tamaño de población', '∞'),
+      ])}
+      ${grupoRes('Resultado', [
+        celda('n', 'tamaño de muestra', d.n, true),
+      ], 'redondeado hacia arriba')}
+    </div>`;
+
+  if (d.tipo === 'media') {
+    const s = val('sigma'), E = val('error');
+    tex(document.getElementById('pasoTex'),
+      `n_0 = \\left(\\frac{${z} \\cdot ${s}}{${E}}\\right)^2 = ${n0}`,
+      `n₀ = (${z} · ${s} / ${E})² = ${n0}`);
+  } else {
+    const p = val('p') || '0.5', E = val('error');
+    tex(document.getElementById('pasoTex'),
+      `n_0 = \\frac{${z}^2 \\cdot ${p}\\,(1 - ${p})}{${E}^2} = ${n0}`,
+      `n₀ = ${z}² · ${p}(1 − ${p}) / ${E}² = ${n0}`);
+  }
+
+  const pasoN = document.getElementById('pasoTexN');
+  pasoN.style.display = conN ? '' : 'none';
+  if (conN) {
+    tex(pasoN,
+      `n = \\frac{n_0}{1 + \\frac{n_0 - 1}{N}} = \\frac{${n0}}{1 + \\frac{${n0} - 1}{${d.poblacion}}} = ${fmt(d.n_exacto, 4)}`,
+      `n = n₀ / (1 + (n₀ − 1)/N) = ${fmt(d.n_exacto, 4)}`);
+  }
+
+  document.getElementById('results').style.display = 'block';
+}
+
+// Inversa: error máximo E para un tamaño de muestra n dado
+function renderError(d) {
+  const conN = d.poblacion !== null;
+  const z  = fmt(d.z, 4);
+  const e0 = fmt(d.e0, 4);
+  const E  = fmt(d.error);
+  const pct = d.tipo === 'proporcion' ? ` (±${fmt(d.error * 100, 3)}%)` : '';
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Valor crítico', [
+        celda('z<sub>α/2</sub>', 'normal estándar', z),
+        celda('α', 'nivel de significancia', fmt(1 - parseFloat(val('confianza')) / 100, 4)),
+      ])}
+      ${grupoRes('Cálculo', [
+        celda('E₀', 'población infinita', e0),
+        conN ? celda('√((N−n)/(N−1))', `corrección con N = ${d.poblacion}`, fmt(d.fpc, 4))
+             : celda('N', 'tamaño de población', '∞'),
+      ])}
+      ${grupoRes('Resultado', [
+        celda('E', 'error máximo' + pct, '±' + E, true),
+      ], `con n = ${d.n}`)}
+    </div>`;
+
+  if (d.tipo === 'media') {
+    const s = val('sigma');
+    tex(document.getElementById('pasoTex'),
+      `E_0 = \\frac{${z} \\cdot ${s}}{\\sqrt{${d.n}}} = ${e0}`,
+      `E₀ = ${z} · ${s} / √${d.n} = ${e0}`);
+  } else {
+    const p = val('p') || '0.5';
+    tex(document.getElementById('pasoTex'),
+      `E_0 = ${z}\\sqrt{\\frac{${p}\\,(1 - ${p})}{${d.n}}} = ${e0}`,
+      `E₀ = ${z} · √(${p}(1 − ${p}) / ${d.n}) = ${e0}`);
+  }
+
+  const pasoN = document.getElementById('pasoTexN');
+  pasoN.style.display = conN ? '' : 'none';
+  if (conN) {
+    tex(pasoN,
+      `E = E_0\\sqrt{\\frac{N - n}{N - 1}} = ${e0}\\sqrt{\\frac{${d.poblacion} - ${d.n}}{${d.poblacion} - 1}} = ${E}`,
+      `E = E₀ · √((N − n)/(N − 1)) = ${E}`);
+  }
+
+  document.getElementById('results').style.display = 'block';
+}
+
+setTipo('media');
+enterCalcula(['confianza', 'error', 'n', 'sigma', 'p', 'poblacion'], calcular);
+document.getElementById('confianza').addEventListener('input', marcarConfianza);
+</script>

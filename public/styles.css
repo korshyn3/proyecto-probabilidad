@@ -82,11 +82,11 @@
     .nav-links li a {
       display: flex;
       align-items: center;
-      padding: 0 1.1rem;
+      padding: 0 0.55rem;
       height: 100%;
       text-decoration: none;
       color: rgba(255,255,255,0.72);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 500;
       letter-spacing: 0.02em;
       border-bottom: 3px solid transparent;
@@ -727,3 +727,178 @@
       color: var(--green);
       font-weight: 700;
     }
+
+    /* ── MENÚ DESPLEGABLE ── */
+    .nav-links > li { position: relative; display: flex; }
+
+    .nav-parent {
+      display: flex;
+      align-items: center;
+      padding: 0 0.55rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -3px;
+      color: rgba(255,255,255,0.72);
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .nav-parent::after {
+      content: '▾';
+      margin-left: 0.35rem;
+      font-size: 0.7em;
+      opacity: 0.7;
+    }
+
+    .nav-parent:hover,
+    .has-sub:focus-within .nav-parent {
+      color: #fff;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .nav-parent.active {
+      color: #fff;
+      border-bottom-color: #7eb3ff;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .submenu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 210px;
+      list-style: none;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      padding: 0.3rem 0;
+      z-index: 200;
+    }
+
+    .has-sub:hover .submenu,
+    .has-sub:focus-within .submenu { display: block; }
+
+    .nav-links .submenu a {
+      display: block;
+      height: auto;
+      padding: 0.55rem 1rem;
+      margin: 0;
+      border-bottom: none;
+      border-left: 3px solid transparent;
+      color: var(--text);
+      font-size: 0.8rem;
+    }
+
+    .nav-links .submenu a:hover { background: var(--off); color: var(--accent); }
+
+    .nav-links .submenu a.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── CONCLUSIÓN DE PRUEBA DE HIPÓTESIS ── */
+    .decision {
+      border-radius: 4px;
+      padding: 0.8rem 1rem;
+      margin-top: 1rem;
+      border: 1px solid;
+      border-left-width: 3px;
+    }
+
+    .decision-si { background: var(--green-light); border-color: #b8dfc9; border-left-color: var(--green); color: var(--green); }
+    .decision-no { background: var(--off); border-color: var(--border); border-left-color: var(--muted); color: var(--text); }
+
+    .decision-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+    }
+
+    .decision-text { font-size: 0.85rem; line-height: 1.55; }
+
+    /* ── LISTAS DINÁMICAS (grupos de ANOVA, variables X) ── */
+    .dyn-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+    }
+
+    .dyn-row .dyn-label {
+      flex: 0 0 5.5rem;
+      padding-top: 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .dyn-row textarea { min-width: 0; }
+
+    .btn-quitar {
+      flex: 0 0 auto;
+      margin-top: 0.35rem;
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--muted);
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .btn-quitar:hover { border-color: var(--red); color: var(--red); }
+    .btn-quitar:disabled { opacity: 0.35; cursor: default; border-color: var(--border); color: var(--muted); }
+
+    .btn-sec {
+      background: var(--white);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-sec:hover { background: var(--accent-light); }
+
+    .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-top: 0.4rem; }
+
+    /* Campo pequeño junto a los botones (α, x₀ para predecir) */
+    .mini-field { display: flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+    .mini-field input { width: 6rem; flex: 0 0 auto; min-width: 0; }
+
+    /* Celdas de tabla resaltadas */
+    td.hl { color: var(--accent); font-weight: 700; }
+    td.txt, th.txt { text-align: left; }
+
+    /* Sustitución de la fórmula con los datos */
+    .paso-tex {
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      background: var(--off);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    .paso-tex .katex { font-size: 1.1em; }
+
+    /* Las fórmulas no se parten en dos líneas; si no caben, se desplazan de lado */
+    .f-expr .katex-html,
+    .paso-tex .katex-html { white-space: nowrap; }
+
+    /* Símbolos dentro de etiquetas en mayúsculas (σ no debe verse como Σ) */
+    .sin-mayus { text-transform: none; }

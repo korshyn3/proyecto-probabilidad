@@ -1,4 +1,26 @@
-<link rel="stylesheet" href="/styles.css">
+<%
+  secciones = [
+    ['Estadística descriptiva', [
+      ['/varianza', 'Varianza y Dispersión', 'σ², s², σ, s — varianza poblacional y muestral'],
+      ['/valor_esperado', 'Valor Esperado', 'E[X], E[X²], Var(X), σ(X) — variable aleatoria discreta'],
+    ]],
+    ['Distribuciones', [
+      ['/normal', 'Distribución Normal Estándar', 'N(0,1) — gráfica interactiva, P(Z ≤ z), P(Z ≥ z), P(z₁ ≤ Z ≤ z₂)'],
+      ['/tstudent', 'Distribución t de Student', 't(ν) — probabilidades, t crítico y comparación con N(0,1)'],
+    ]],
+    ['Inferencia', [
+      ['/tamano_muestra', 'Tamaño de Muestra', 'n para estimar una media o una proporción, con corrección por población finita'],
+      ['/anova', 'ANOVA de un Factor', 'Tabla ANOVA, prueba F y p-valor — compara las medias de k grupos'],
+    ]],
+    ['Regresión', [
+      ['/regresion', 'Regresión Lineal Simple', 'ŷ = b₀ + b₁x, r, R², prueba de la pendiente, gráficas de dispersión y residuos'],
+      ['/regresion_multiple', 'Regresión Lineal Múltiple', 'ŷ = b₀ + b₁x₁ + … + bₖxₖ, R² ajustado, prueba F y t por coeficiente'],
+    ]],
+    ['Práctica', [
+      ['/problemas', 'Colección de Problemas', '10 problemas resueltos — normal estándar, varianza y valor esperado'],
+    ]],
+  ]
+%>
 <div class="page-header">
   <div class="page-header-inner">
     <div class="breadcrumb">Probabilidad &amp; Estadística</div>
@@ -8,46 +30,20 @@
 </div>
 
 <div class="main-content">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Módulos disponibles</span>
+  <% secciones.each do |titulo, modulos| %>
+    <div class="section-label"><%= titulo %></div>
+    <div class="card">
+      <div class="card-body" style="padding: 0;">
+        <% modulos.each_with_index do |(ruta, nombre, desc), i| %>
+          <a href="<%= ruta %>" class="module-link"<%= ' style="border-bottom:none;"' if i == modulos.size - 1 %>>
+            <div>
+              <div class="module-title"><%= nombre %></div>
+              <div class="module-desc"><%= desc %></div>
+            </div>
+            <span class="module-arrow">→</span>
+          </a>
+        <% end %>
+      </div>
     </div>
-    <div class="card-body" style="padding: 0;">
-      <a href="/varianza" class="module-link">
-        <div>
-          <div class="module-title">Varianza y Dispersión</div>
-          <div class="module-desc">σ², s², σ, s — varianza poblacional y muestral</div>
-        </div>
-        <span class="module-arrow">→</span>
-      </a>
-      <a href="/valor_esperado" class="module-link">
-        <div>
-          <div class="module-title">Valor Esperado</div>
-          <div class="module-desc">E[X], E[X²], Var(X), σ(X) — variable aleatoria discreta</div>
-        </div>
-        <span class="module-arrow">→</span>
-      </a>
-      <a href="/normal" class="module-link">
-        <div>
-          <div class="module-title">Distribución Normal Estándar</div>
-          <div class="module-desc">N(0,1) — gráfica interactiva, P(Z ≤ z), P(Z ≥ z), P(z₁ ≤ Z ≤ z₂)</div>
-        </div>
-        <span class="module-arrow">→</span>
-      </a>
-      <!-- <a href="/tstudent" class="module-link">
-        <div>
-          <div class="module-title">Distribución t-Student</div>
-          <div class="module-desc">t(ν) — gráfica comparativa con N(0,1), pruebas de hipótesis</div>
-        </div>
-        <span class="module-arrow">→</span>
-      </a> -->
-      <a href="/problemas" class="module-link" style="border-bottom:none;">
-        <div>
-          <div class="module-title">Colección de Problemas</div>
-          <div class="module-desc">10 problemas resueltos — normal estándar, varianza y valor esperado</div>
-        </div>
-        <span class="module-arrow">→</span>
-      </a>
-    </div>
-  </div>
+  <% end %>
 </div>

@@ -1,0 +1,277 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Regresión / Simple</div>
+    <h1>Regresión Lineal Simple</h1>
+    <p class="page-desc">Ajusta la recta ŷ = b₀ + b₁x por mínimos cuadrados y evalúa qué tan bien explica los datos</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Coeficientes (mínimos cuadrados)</div>
+      <div class="f-expr" data-tex="b_1 = \frac{S_{xy}}{S_{xx}} = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sum (x_i - \bar{x})^2} \qquad b_0 = \bar{y} - b_1 \bar{x}" style="font-size:0.8rem;">b₁ = Sxy / Sxx,  b₀ = ȳ − b₁x̄</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Correlación y determinación</div>
+      <div class="f-expr" data-tex="r = \frac{S_{xy}}{\sqrt{S_{xx}\,S_{yy}}} \qquad R^2 = \frac{SC_R}{SC_T} = 1 - \frac{SC_E}{SC_T}">r = Sxy / √(Sxx·Syy),  R² = 1 − SCE/SCT</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Datos</span>
+    </div>
+    <div class="card-body">
+      <div class="labeled-input">
+        <label class="input-label">Variable independiente <span class="sin-mayus">x</span></label>
+        <div class="input-group"><textarea id="xs" rows="1" placeholder="Ej: 1, 2, 3, 4, 5, 6, 7, 8"></textarea></div>
+      </div>
+      <div class="labeled-input">
+        <label class="input-label">Variable dependiente <span class="sin-mayus">y</span></label>
+        <div class="input-group"><textarea id="ys" rows="1" placeholder="Ej: 3.1, 4.9, 7.2, 8.8, 11.1, 12.9, 15.2, 16.8"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+        <label class="mini-field">α = <input type="text" id="alfa" value="0.05" /></label>
+      </div>
+      <p class="field-hint">Un valor y por cada x, en el mismo orden, separados por comas o espacios. Mínimo 3 pares.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Recta de regresión</span>
+      </div>
+      <div class="card-body">
+        <div class="paso-tex ecuacion" id="ecuacion" style="margin-top:0; margin-bottom:1rem;"></div>
+        <div id="statsGrid"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Diagrama de dispersión</span>
+      </div>
+      <div class="card-body">
+        <div class="legend-row">
+          <div class="legend-item"><div style="width:9px;height:9px;border-radius:50%;background:rgba(26,58,107,0.6);"></div><span>Datos (x, y)</span></div>
+          <div class="legend-item"><div class="legend-line" style="background:#b5651d;height:2px;"></div><span>Recta ŷ = b₀ + b₁x</span></div>
+          <div class="legend-item" id="legendPred" style="display:none;"><div style="width:10px;height:10px;transform:rotate(45deg);background:#2f7d5b;"></div><span>Predicción</span></div>
+        </div>
+        <div class="chart-wrap" style="height:320px;"><canvas id="chartDisp"></canvas></div>
+        <div class="btn-row" style="margin-top:0.8rem;">
+          <label class="mini-field">Predecir en x₀ = <input type="text" id="x0" placeholder="Ej: 10" /></label>
+          <button class="btn btn-sec" onclick="predecir()">Predecir ŷ</button>
+          <span class="mini-field" id="prediccion"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Prueba de significancia de la pendiente</span>
+      </div>
+      <div class="card-body">
+        <p class="field-hint" style="margin:0 0 0.8rem;" data-tex="H_0: \beta_1 = 0 \;\;(\text{x no explica a y}) \qquad H_1: \beta_1 \neq 0 \qquad t = \frac{b_1}{s_e / \sqrt{S_{xx}}}">H₀: β₁ = 0    H₁: β₁ ≠ 0    t = b₁ / (sₑ/√Sxx)</p>
+        <div id="pruebaGrid"></div>
+        <div id="decision"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Gráfica de residuos</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:220px;"><canvas id="chartRes"></canvas></div>
+        <p class="chart-note">Si el modelo es adecuado, los residuos eᵢ = yᵢ − ŷᵢ se reparten al azar alrededor de 0, sin formar curvas ni embudos.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Desglose paso a paso</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="math">i</th>
+                <th class="math">xᵢ</th>
+                <th class="math">yᵢ</th>
+                <th class="math">xᵢyᵢ</th>
+                <th class="math">xᵢ²</th>
+                <th class="math">ŷᵢ</th>
+                <th class="math">eᵢ = yᵢ − ŷᵢ</th>
+                <th class="math">eᵢ²</th>
+              </tr>
+            </thead>
+            <tbody id="pasoBody"></tbody>
+          </table>
+        </div>
+        <div style="padding:0 1.4rem 1.2rem;">
+          <div class="paso-tex" id="pasoS"></div>
+          <div class="paso-tex" id="pasoB"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let chartDisp = null, chartRes = null, ultimo = null;
+
+async function calcular() {
+  const val = id => document.getElementById(id).value.trim();
+  const d = await enviar('/calcular_regresion', { xs: val('xs'), ys: val('ys'), alfa: val('alfa') },
+                         document.getElementById('btnCalc'));
+  if (d) renderResults(d);
+}
+
+// "+ 0.5x" / "− 0.5x" para escribir la ecuación
+const conSigno = (v, sufijo = '') => (v < 0 ? ' − ' : ' + ') + fmt(Math.abs(v), 4) + sufijo;
+
+function renderResults(d) {
+  ultimo = d;
+  document.getElementById('prediccion').textContent = '';
+  document.getElementById('legendPred').style.display = 'none';
+
+  tex(document.getElementById('ecuacion'),
+    `\\hat{y} = ${fmt(d.b0, 4)}${conSigno(d.b1, 'x').replace('−', '-')}`,
+    `ŷ = ${fmt(d.b0, 4)}${conSigno(d.b1, 'x')}`);
+
+  const fuerza = r => {
+    const a = Math.abs(r);
+    const nivel = a >= 0.9 ? 'muy fuerte' : a >= 0.7 ? 'fuerte' : a >= 0.4 ? 'moderada' : a >= 0.2 ? 'débil' : 'muy débil';
+    return `${nivel} ${r > 0 ? 'positiva' : r < 0 ? 'negativa' : ''}`;
+  };
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Coeficientes', [
+        celda('b₀', 'intersección', fmt(d.b0)),
+        celda('b₁', 'pendiente', fmt(d.b1), true),
+      ])}
+      ${grupoRes('Ajuste', [
+        celda('r', `correlación ${fuerza(d.r)}`, fmt(d.r, 4)),
+        celda('R²', `explica el ${fmt(d.r2 * 100, 2)}% de la variación de y`, fmt(d.r2, 4), true),
+      ])}
+      ${grupoRes('Error', [
+        celda('sₑ', 'error estándar de estimación', fmt(d.se, 4)),
+        celda('n', 'pares de datos', d.n),
+      ])}
+    </div>`;
+
+  // Prueba t de la pendiente
+  const t = d.t_b1 === null ? '∞' : fmt(d.t_b1, 4);
+  document.getElementById('pruebaGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Estadístico', [
+        celda('t', 'calculado', t, true),
+        celda(`t<sub>${d.alfa / 2}</sub>(${d.gl})`, 'valor crítico (dos colas)', '±' + fmt(d.t_crit, 4)),
+      ])}
+      ${grupoRes('Significancia', [
+        celda('p', 'p-valor', fmtP(d.p_b1), true),
+        celda('α', 'nivel de significancia', d.alfa),
+      ])}
+      ${grupoRes(`Intervalo al ${fmt((1 - d.alfa) * 100, 2)}%`, [
+        celda('β₁', 'límite inferior', fmt(d.ic_b1[0], 4)),
+        celda('β₁', 'límite superior', fmt(d.ic_b1[1], 4)),
+      ])}
+    </div>`;
+  document.getElementById('decision').innerHTML = d.rechaza
+    ? conclusion(true, 'Se rechaza H₀', `|t| = ${t.replace('-', '')} &gt; ${fmt(d.t_crit, 4)} (p = ${fmtP(d.p_b1)} &lt; ${d.alfa}). La pendiente es significativa: <strong>x sí ayuda a predecir y</strong>.`)
+    : conclusion(false, 'No se rechaza H₀', `|t| = ${t.replace('-', '')} ≤ ${fmt(d.t_crit, 4)} (p = ${fmtP(d.p_b1)} ≥ ${d.alfa}). No hay evidencia suficiente de que x explique a y.`);
+
+  // Tabla
+  const suma = k => d.pasos.reduce((s, p) => s + p[k], 0);
+  document.getElementById('pasoBody').innerHTML = d.pasos.map((p, i) => `
+    <tr>
+      <td>${i + 1}</td><td>${fmt(p.x)}</td><td>${fmt(p.y)}</td><td>${fmt(p.xy)}</td><td>${fmt(p.x2)}</td>
+      <td>${fmt(p.y_hat)}</td><td>${fmt(p.residuo)}</td><td>${fmt(p.residuo ** 2)}</td>
+    </tr>`).join('') + `
+    <tr class="sum-row">
+      <td>Σ</td><td>${fmt(suma('x'))}</td><td>${fmt(suma('y'))}</td><td>${fmt(suma('xy'))}</td><td>${fmt(suma('x2'))}</td>
+      <td>${fmt(suma('y_hat'))}</td><td>${fmt(suma('residuo'), 4)}</td><td>${fmt(d.sce)}</td>
+    </tr>`;
+
+  tex(document.getElementById('pasoS'),
+    `\\bar{x} = ${fmt(d.media_x, 4)} \\quad \\bar{y} = ${fmt(d.media_y, 4)} \\quad S_{xx} = ${fmt(d.sxx, 4)} \\quad S_{yy} = ${fmt(d.syy, 4)} \\quad S_{xy} = ${fmt(d.sxy, 4)}`,
+    `x̄ = ${fmt(d.media_x, 4)}, ȳ = ${fmt(d.media_y, 4)}, Sxx = ${fmt(d.sxx, 4)}, Syy = ${fmt(d.syy, 4)}, Sxy = ${fmt(d.sxy, 4)}`);
+  tex(document.getElementById('pasoB'),
+    `b_1 = \\frac{${fmt(d.sxy, 4)}}{${fmt(d.sxx, 4)}} = ${fmt(d.b1, 4)} \\qquad b_0 = ${fmt(d.media_y, 4)} - (${fmt(d.b1, 4)})(${fmt(d.media_x, 4)}) = ${fmt(d.b0, 4)}`,
+    `b₁ = ${fmt(d.sxy, 4)} / ${fmt(d.sxx, 4)} = ${fmt(d.b1, 4)},  b₀ = ${fmt(d.media_y, 4)} − ${fmt(d.b1, 4)}·${fmt(d.media_x, 4)} = ${fmt(d.b0, 4)}`);
+
+  document.getElementById('results').style.display = 'block';
+  graficar(d);
+}
+
+function graficar(d, pred = null) {
+  const xs = d.pasos.map(p => p.x);
+  let xMin = Math.min(...xs), xMax = Math.max(...xs);
+  if (pred) { xMin = Math.min(xMin, pred.x); xMax = Math.max(xMax, pred.x); }
+  const margen = (xMax - xMin) * 0.05 || 1;
+  const recta = [xMin - margen, xMax + margen].map(x => ({ x, y: d.b0 + d.b1 * x }));
+
+  if (chartDisp) chartDisp.destroy();
+  chartDisp = new Chart(document.getElementById('chartDisp'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { data: d.pasos.map(p => ({ x: p.x, y: p.y })), backgroundColor: 'rgba(26,58,107,0.6)', pointRadius: 5, order: 1 },
+        { data: recta, borderColor: '#b5651d', borderWidth: 2, pointRadius: 0, showLine: true, order: 2 },
+        ...(pred ? [{ data: [pred], backgroundColor: '#2f7d5b', pointStyle: 'rectRot', pointRadius: 8, order: 0 }] : []),
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `(${fmt(c.parsed.x, 4)}, ${fmt(c.parsed.y, 4)})` } } },
+      scales: ejesGrafica('x', 'y'),
+    },
+  });
+
+  if (pred) return;
+  if (chartRes) chartRes.destroy();
+  chartRes = new Chart(document.getElementById('chartRes'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { data: d.pasos.map(p => ({ x: p.x, y: p.residuo })), backgroundColor: 'rgba(26,58,107,0.6)', pointRadius: 5 },
+        { data: [{ x: xMin - margen, y: 0 }, { x: xMax + margen, y: 0 }], borderColor: '#999', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, showLine: true },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `x = ${fmt(c.parsed.x, 4)}, e = ${fmt(c.parsed.y, 4)}` } } },
+      scales: ejesGrafica('x', 'residuo e'),
+    },
+  });
+}
+
+function predecir() {
+  if (!ultimo) return;
+  const x0 = parseFloat(document.getElementById('x0').value);
+  if (isNaN(x0)) { document.getElementById('prediccion').textContent = 'Ingresa un número.'; return; }
+  const y0 = ultimo.b0 + ultimo.b1 * x0;
+  const xs = ultimo.pasos.map(p => p.x);
+  const fuera = x0 < Math.min(...xs) || x0 > Math.max(...xs);
+  document.getElementById('prediccion').innerHTML =
+    `ŷ = ${fmt(ultimo.b0, 4)}${conSigno(ultimo.b1)}·(${x0}) = <strong style="color:var(--green)">${fmt(y0, 4)}</strong>` +
+    (fuera ? ' <span style="color:var(--red)">· fuera del rango de los datos (extrapolación)</span>' : '');
+  document.getElementById('legendPred').style.display = '';
+  graficar(ultimo, { x: x0, y: y0 });
+}
+
+enterCalcula(['xs', 'ys', 'alfa'], calcular);
+enterCalcula(['x0'], predecir);
+</script>

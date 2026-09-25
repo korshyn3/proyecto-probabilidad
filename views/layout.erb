@@ -8,11 +8,24 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=7">
+  <link rel="stylesheet" href="/styles.css?v=11">
   <link rel="stylesheet" href="/homeStyle.css">
+  <script src="/app.js?v=2"></script>
 </head>
 <body>
 
+<%
+  # Menú: [texto, ruta] o [texto, [[texto, ruta], ...]] para un submenú
+  menu = [
+    ['Inicio', '/'],
+    ['Descriptiva', [['Varianza', '/varianza'], ['Valor esperado', '/valor_esperado']]],
+    ['Distribuciones', [['Normal', '/normal'], ['t-Student', '/tstudent']]],
+    ['Inferencia', [['Tamaño de muestra', '/tamano_muestra'], ['ANOVA de un factor', '/anova']]],
+    ['Regresión', [['Regresión simple', '/regresion'], ['Regresión múltiple', '/regresion_multiple']]],
+    ['Problemas', '/problemas'],
+    ['Acerca de', '/acerca'],
+  ]
+%>
 <nav>
   <div class="nav-inner">
     <a href="/" class="nav-brand">
@@ -20,13 +33,21 @@
       <span class="brand-text">Aproxima2</span>
     </a>
     <ul class="nav-links">
-      <li><a href="/" class="<%= request.path == '/' ? 'active' : '' %>">Inicio</a></li>
-      <li><a href="/varianza" class="<%= request.path == '/varianza' ? 'active' : '' %>">Varianza</a></li>
-      <li><a href="/valor_esperado" class="<%= request.path == '/valor_esperado' ? 'active' : '' %>">Esperado</a></li>
-      <li><a href="/normal" class="<%= request.path == '/normal' ? 'active' : '' %>">Normal</a></li>
-      <!-- <li><a href="/tstudent" class="">t-Student</a></li> -->
-      <li><a href="/problemas" class="<%= request.path == '/problemas' ? 'active' : '' %>">Problemas</a></li>
-      <li><a href="/acerca" class="<%= request.path == '/acerca' ? 'active' : '' %>">Acerca de</a></li>
+      <% menu.each do |texto, destino| %>
+        <% if destino.is_a?(Array) %>
+          <% activo = destino.any? { |_, ruta| request.path == ruta } %>
+          <li class="has-sub">
+            <button type="button" class="nav-parent <%= 'active' if activo %>"><%= texto %></button>
+            <ul class="submenu">
+              <% destino.each do |sub, ruta| %>
+                <li><a href="<%= ruta %>" class="<%= 'active' if request.path == ruta %>"><%= sub %></a></li>
+              <% end %>
+            </ul>
+          </li>
+        <% else %>
+          <li><a href="<%= destino %>" class="<%= 'active' if request.path == destino %>"><%= texto %></a></li>
+        <% end %>
+      <% end %>
     </ul>
   </div>
 </nav>
@@ -34,16 +55,7 @@
 <%= yield %>
 
 <script>
-  // Los textarea empiezan de una línea y crecen conforme se escribe
-  document.querySelectorAll('textarea').forEach(t => {
-    const ajustar = () => {
-      t.style.height = 'auto';
-      t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + 'px';
-    };
-    t.addEventListener('input', ajustar);
-    window.addEventListener('resize', ajustar);
-    ajustar();
-  });
+  document.querySelectorAll('textarea').forEach(ajustarAltura);
 
   // Fórmulas en notación matemática (si KaTeX no carga, queda el texto lineal)
   document.addEventListener('DOMContentLoaded', () => {

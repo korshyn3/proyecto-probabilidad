@@ -1,0 +1,234 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="breadcrumb">Inicio / Inferencia / ANOVA</div>
+    <h1>ANOVA de un Factor</h1>
+    <p class="page-desc">Compara las medias de varios grupos: ¿al menos una es diferente?</p>
+  </div>
+</div>
+
+<div class="main-content">
+
+  <div class="formula-row">
+    <div class="formula-box">
+      <div class="f-label">Sumas de cuadrados</div>
+      <div class="f-expr" data-tex="SC_{Tr} = \sum_{i=1}^{k} n_i(\bar{x}_i - \bar{x})^2 \qquad SC_E = \sum_{i=1}^{k}\sum_{j=1}^{n_i}(x_{ij} - \bar{x}_i)^2">SCTr = Σ nᵢ(x̄ᵢ − x̄)²,  SCE = ΣΣ(xᵢⱼ − x̄ᵢ)²</div>
+    </div>
+    <div class="formula-box">
+      <div class="f-label">Estadístico de prueba</div>
+      <div class="f-expr" data-tex="F = \frac{CM_{Tr}}{CM_E} = \frac{SC_{Tr} / (k - 1)}{SC_E / (N - k)}">F = CMTr / CME = [SCTr/(k−1)] / [SCE/(N−k)]</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Datos por grupo</span>
+    </div>
+    <div class="card-body">
+      <div id="grupos"></div>
+      <div class="btn-row">
+        <button class="btn btn-sec" onclick="agregarGrupo()">+ Agregar grupo</button>
+        <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
+        <label class="mini-field">α = <input type="text" id="alfa" value="0.05" /></label>
+      </div>
+      <p class="field-hint">Un grupo por fila, con sus valores separados por comas o espacios. Cada grupo necesita al menos 2 datos; no tienen que tener la misma cantidad.</p>
+      <p class="field-hint" data-tex="H_0: \mu_1 = \mu_2 = \cdots = \mu_k \qquad H_1: \text{al menos una media es diferente}">H₀: μ₁ = μ₂ = … = μₖ    H₁: al menos una media es diferente</p>
+    </div>
+  </div>
+
+  <div class="alert alert-error" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resultado de la prueba</span>
+      </div>
+      <div class="card-body">
+        <div id="statsGrid"></div>
+        <div id="decision"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Tabla ANOVA</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="txt">Fuente de variación</th>
+                <th>SC</th>
+                <th>gl</th>
+                <th>CM</th>
+                <th>F</th>
+                <th>p-valor</th>
+              </tr>
+            </thead>
+            <tbody id="anovaBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Datos y medias por grupo</span>
+      </div>
+      <div class="card-body">
+        <div class="legend-row">
+          <div class="legend-item"><div style="width:9px;height:9px;border-radius:50%;background:rgba(26,58,107,0.55);"></div><span>Dato</span></div>
+          <div class="legend-item"><div class="legend-line" style="background:#1a3a6b;height:3px;"></div><span>Media del grupo x̄ᵢ</span></div>
+          <div class="legend-item"><div class="legend-line dashed"></div><span>Media global x̄</span></div>
+        </div>
+        <div class="chart-wrap"><canvas id="anovaChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resumen por grupo</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="txt">Grupo</th>
+                <th class="math">nᵢ</th>
+                <th class="math">Σxᵢⱼ</th>
+                <th class="math">x̄ᵢ</th>
+                <th class="math">sᵢ²</th>
+                <th class="math">nᵢ(x̄ᵢ − x̄)²</th>
+              </tr>
+            </thead>
+            <tbody id="gruposBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let myChart = null;
+
+const EJEMPLO = ['23, 25, 21, 22, 24', '27, 29, 26, 28, 30', '22, 20, 24, 21, 23'];
+
+function agregarGrupo(valor = '') {
+  const cont = document.getElementById('grupos');
+  const fila = document.createElement('div');
+  fila.className = 'dyn-row';
+  fila.innerHTML = `
+    <span class="dyn-label"></span>
+    <textarea rows="1" placeholder="Ej: ${EJEMPLO[cont.children.length % 3]}"></textarea>
+    <button class="btn-quitar" title="Quitar grupo" onclick="quitarGrupo(this)">×</button>`;
+  fila.querySelector('textarea').value = valor;
+  cont.appendChild(fila);
+  fila.querySelector('textarea').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); calcular(); }
+  });
+  renumerar();
+}
+
+function quitarGrupo(btn) {
+  btn.closest('.dyn-row').remove();
+  renumerar();
+}
+
+function renumerar() {
+  const filas = document.querySelectorAll('#grupos .dyn-row');
+  filas.forEach((f, i) => {
+    f.querySelector('.dyn-label').textContent = `Grupo ${i + 1}`;
+    f.querySelector('.btn-quitar').disabled = filas.length <= 2;
+  });
+}
+
+async function calcular() {
+  const grupos = [...document.querySelectorAll('#grupos textarea')].map(t => t.value.trim()).filter(v => v);
+  if (grupos.length < 2) { mostrarError('Llena al menos 2 grupos.'); return; }
+  const d = await enviar('/calcular_anova', {
+    grupos: JSON.stringify(grupos), alfa: document.getElementById('alfa').value.trim(),
+  }, document.getElementById('btnCalc'));
+  if (d) renderResults(d);
+}
+
+function renderResults(d) {
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="res-split">
+      ${grupoRes('Prueba F', [
+        celda('F', 'estadístico calculado', fmt(d.f, 4), true),
+        celda(`F<sub>${d.alfa}</sub>(${d.gl_b}, ${d.gl_w})`, 'valor crítico', fmt(d.f_crit, 4)),
+      ])}
+      ${grupoRes('Significancia', [
+        celda('p', 'p-valor', fmtP(d.p_valor), true),
+        celda('α', 'nivel de significancia', d.alfa),
+      ])}
+      ${grupoRes('Datos', [
+        celda('k', 'grupos', d.k),
+        celda('N', 'datos en total', d.n_total),
+      ])}
+    </div>`;
+
+  const comp = d.rechaza
+    ? `F = ${fmt(d.f, 4)} &gt; ${fmt(d.f_crit, 4)} y p = ${fmtP(d.p_valor)} &lt; α = ${d.alfa}.`
+    : `F = ${fmt(d.f, 4)} ≤ ${fmt(d.f_crit, 4)} y p = ${fmtP(d.p_valor)} ≥ α = ${d.alfa}.`;
+  document.getElementById('decision').innerHTML = d.rechaza
+    ? conclusion(true, 'Se rechaza H₀', `${comp} Hay evidencia de que <strong>al menos una media es diferente</strong> a las demás.`)
+    : conclusion(false, 'No se rechaza H₀', `${comp} No hay evidencia suficiente para decir que las medias son diferentes.`);
+
+  document.getElementById('anovaBody').innerHTML = `
+    <tr><td class="txt">Tratamientos (entre grupos)</td><td>${fmt(d.scb)}</td><td>${d.gl_b}</td><td>${fmt(d.cmb)}</td><td class="hl">${fmt(d.f, 4)}</td><td class="hl">${fmtP(d.p_valor)}</td></tr>
+    <tr><td class="txt">Error (dentro de grupos)</td><td>${fmt(d.scw)}</td><td>${d.gl_w}</td><td>${fmt(d.cmw)}</td><td></td><td></td></tr>
+    <tr class="sum-row"><td class="txt">Total</td><td>${fmt(d.sct)}</td><td>${d.gl_t}</td><td></td><td></td><td></td></tr>`;
+
+  document.getElementById('gruposBody').innerHTML = d.grupos.map((g, i) => `
+    <tr>
+      <td class="txt">Grupo ${i + 1}</td>
+      <td>${g.n}</td><td>${fmt(g.suma)}</td><td>${fmt(g.media)}</td><td>${fmt(g.varianza)}</td>
+      <td>${fmt(g.contrib)}</td>
+    </tr>`).join('') + `
+    <tr class="sum-row"><td class="txt">Global</td><td>${d.n_total}</td><td>${fmt(d.grupos.reduce((s, g) => s + g.suma, 0))}</td><td>${fmt(d.media_global)}</td><td></td><td>${fmt(d.scb)}</td></tr>`;
+
+  document.getElementById('results').style.display = 'block';
+  graficar(d);
+}
+
+function graficar(d) {
+  if (myChart) myChart.destroy();
+  const puntos = d.grupos.flatMap((g, i) => g.datos.map(y => ({ x: i + 1, y })));
+  const medias = d.grupos.map((g, i) => ({
+    data: [{ x: i + 0.7, y: g.media }, { x: i + 1.3, y: g.media }],
+    borderColor: COLOR_ACENTO, borderWidth: 3, pointRadius: 0, showLine: true,
+  }));
+  const ejes = ejesGrafica('', 'Valor');
+  ejes.x.min = 0.5;
+  ejes.x.max = d.k + 0.5;
+  ejes.x.afterBuildTicks = eje => { eje.ticks = d.grupos.map((_, i) => ({ value: i + 1 })); };
+  ejes.x.ticks = { font: FUENTE_GRAFICA, callback: v => `Grupo ${v}` };
+  ejes.x.grid = { display: false };
+
+  myChart = new Chart(document.getElementById('anovaChart'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { data: puntos, backgroundColor: 'rgba(26,58,107,0.55)', pointRadius: 5 },
+        ...medias,
+        { data: [{ x: 0.5, y: d.media_global }, { x: d.k + 0.5, y: d.media_global }],
+          borderColor: '#999', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, showLine: true },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: ejes,
+    },
+  });
+}
+
+EJEMPLO.forEach(() => agregarGrupo());
+</script>
