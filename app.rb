@@ -217,8 +217,11 @@ end
 post '/calcular_anova' do
   responder do
     alfa   = leer_alfa
-    grupos = JSON.parse(params[:grupos] || '[]').map { |g| parse_lista(g) }.reject(&:empty?)
+    grupos = JSON.parse(params[:grupos] || '[]').map { |g| parse_lista(g) }
     raise 'Ingresa al menos 2 grupos con datos' if grupos.length < 2
+    # Un grupo vacío se rechaza en vez de saltarlo, para no renumerar los demás
+    vacio = grupos.index(&:empty?)
+    raise "El Grupo #{vacio + 1} está vacío: llénalo o quítalo con ×" if vacio
     raise 'Cada grupo necesita al menos 2 datos' if grupos.any? { |g| g.length < 2 }
 
     k = grupos.length

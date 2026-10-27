@@ -149,8 +149,10 @@ function renumerar() {
 }
 
 async function calcular() {
-  const grupos = [...document.querySelectorAll('#grupos textarea')].map(t => t.value.trim()).filter(v => v);
-  if (grupos.length < 2) { mostrarError('Llena al menos 2 grupos.'); return; }
+  const grupos = [...document.querySelectorAll('#grupos textarea')].map(t => t.value.trim());
+  // Un grupo vacío se rechaza en vez de saltarlo, para no renumerar los demás
+  const vacio = grupos.indexOf('');
+  if (vacio >= 0) { mostrarError(`El Grupo ${vacio + 1} está vacío: llénalo o quítalo con ×`); return; }
   const d = await enviar('/calcular_anova', {
     grupos: JSON.stringify(grupos), alfa: document.getElementById('alfa').value.trim(),
   }, document.getElementById('btnCalc'));
