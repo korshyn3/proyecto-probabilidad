@@ -845,7 +845,30 @@
       color: var(--accent);
     }
 
+    /* Nombre editable del grupo (ANOVA), en lugar de la etiqueta fija */
+    .dyn-row .dyn-name {
+      flex: 0 0 8rem;
+      min-width: 0;
+      padding: 0.65rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
     .dyn-row textarea { min-width: 0; }
+
+    /* Qué se compara (ANOVA): nombre + artículo el/la */
+    .factor-row { margin-bottom: 0.9rem; }
+    .factor-row #factor { width: 10rem; }
+    .factor-row select {
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      padding: 0.4rem 0.3rem;
+    }
 
     .btn-quitar {
       flex: 0 0 auto;

@@ -2,3 +2,4 @@
 *.gem
 *.log
 tmp/
+.claude/

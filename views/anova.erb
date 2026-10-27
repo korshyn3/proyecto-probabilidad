@@ -26,13 +26,19 @@
       <span class="card-title">Datos por grupo</span>
     </div>
     <div class="card-body">
+      <div class="factor-row">
+        <label class="mini-field">Qué se compara
+          <input type="text" id="factor" placeholder="Grupo" />
+          <select id="articulo"><option>el</option><option>la</option></select>
+        </label>
+      </div>
       <div id="grupos"></div>
       <div class="btn-row">
         <button class="btn btn-sec" onclick="agregarGrupo()">+ Agregar grupo</button>
         <button class="btn" id="btnCalc" onclick="calcular()">Calcular</button>
         <label class="mini-field">α = <input type="text" id="alfa" value="0.05" /></label>
       </div>
-      <p class="field-hint">Un grupo por fila, con sus valores separados por comas o espacios. Cada grupo necesita al menos 2 datos; no tienen que tener la misma cantidad.</p>
+      <p class="field-hint">Un grupo por fila, con sus valores separados por comas o espacios. Cada grupo necesita al menos 2 datos; no tienen que tener la misma cantidad. El nombre de cada grupo es opcional (ej: FORD).</p>
       <p class="field-hint" data-tex="H_0: \mu_1 = \mu_2 = \cdots = \mu_k \qquad H_1: \text{al menos una media es diferente}">H₀: μ₁ = μ₂ = … = μₖ    H₁: al menos una media es diferente</p>
     </div>
   </div>
@@ -97,7 +103,7 @@
           <table>
             <thead>
               <tr>
-                <th class="txt">Grupo</th>
+                <th class="txt" id="colGrupo">Grupo</th>
                 <th class="math">nᵢ</th>
                 <th class="math">Σxᵢⱼ</th>
                 <th class="math">x̄ᵢ</th>
@@ -118,20 +124,60 @@
 let myChart = null;
 
 const EJEMPLO = ['23, 25, 21, 22, 24', '27, 29, 26, 28, 30', '22, 20, 24, 21, 23'];
+const factor = document.getElementById('factor');
+const articulo = document.getElementById('articulo');
+let articuloManual = false;
+
+// El artículo se sugiere por la terminación (-a → la) hasta que el usuario lo elige a mano
+factor.addEventListener('input', () => {
+  if (!articuloManual) articulo.value = /[aá]$/i.test(factor.value.trim()) ? 'la' : 'el';
+  renumerar();
+});
+articulo.addEventListener('change', () => { articuloManual = true; });
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mayus = s => s.charAt(0).toUpperCase() + s.slice(1);
+// En las frases va en minúscula, salvo siglas (FORD se queda igual)
+const minus = s => /^.\p{Ll}/u.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+
+// carro → carros, motor → motores, lápiz → lápices, camión → camiones
+function plural(s) {
+  const may = s === s.toUpperCase() && s !== s.toLowerCase();
+  const fin = t => may ? t.toUpperCase() : t;
+  if (/[aeiouáéíóú]$/i.test(s)) return s + fin('s');
+  if (/[sx]$/i.test(s)) return s;
+  if (/z$/i.test(s)) return s.slice(0, -1) + fin('ces');
+  const sinAcento = s.replace(/[áéíóú](?=[^aeiouáéíóú]$)/i, c => 'aeiouAEIOU'['áéíóúÁÉÍÓÚ'.indexOf(c)]);
+  return sinAcento + fin('es');
+}
+
+const etiquetaFactor = () => mayus(factor.value.trim() || 'Grupo');
+
+// Textos de lo que se compara y nombre de cada grupo (propio o "<factor> <n>")
+function textos() {
+  const sing = factor.value.trim() || 'Grupo';
+  return {
+    singular: minus(sing),
+    plural: minus(plural(sing)),
+    etiqueta: mayus(sing),
+    art: factor.value.trim() ? articulo.value : 'el',
+    nombres: [...document.querySelectorAll('#grupos .dyn-name')].map((n, i) => n.value.trim() || `${mayus(sing)} ${i + 1}`),
+  };
+}
 
 function agregarGrupo(valor = '') {
   const cont = document.getElementById('grupos');
   const fila = document.createElement('div');
   fila.className = 'dyn-row';
   fila.innerHTML = `
-    <span class="dyn-label"></span>
+    <input type="text" class="dyn-name" title="Nombre del grupo (opcional)" />
     <textarea rows="1" placeholder="Ej: ${EJEMPLO[cont.children.length % 3]}"></textarea>
     <button class="btn-quitar" title="Quitar grupo" onclick="quitarGrupo(this)">×</button>`;
   fila.querySelector('textarea').value = valor;
   cont.appendChild(fila);
-  fila.querySelector('textarea').addEventListener('keydown', e => {
+  fila.querySelectorAll('input, textarea').forEach(el => el.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); calcular(); }
-  });
+  }));
   renumerar();
 }
 
@@ -143,23 +189,33 @@ function quitarGrupo(btn) {
 function renumerar() {
   const filas = document.querySelectorAll('#grupos .dyn-row');
   filas.forEach((f, i) => {
-    f.querySelector('.dyn-label').textContent = `Grupo ${i + 1}`;
+    f.querySelector('.dyn-name').placeholder = `${etiquetaFactor()} ${i + 1}`;
     f.querySelector('.btn-quitar').disabled = filas.length <= 2;
   });
 }
 
 async function calcular() {
-  const grupos = [...document.querySelectorAll('#grupos textarea')].map(t => t.value.trim());
+  const t = textos();
+  const grupos = [...document.querySelectorAll('#grupos textarea')].map(ta => ta.value.trim());
   // Un grupo vacío se rechaza en vez de saltarlo, para no renumerar los demás
   const vacio = grupos.indexOf('');
-  if (vacio >= 0) { mostrarError(`El Grupo ${vacio + 1} está vacío: llénalo o quítalo con ×`); return; }
+  if (vacio >= 0) { mostrarError(`Faltan datos en ${t.nombres[vacio]}: escribe sus valores o quita la fila con ×`); return; }
+
+  const vistos = new Set();
+  for (const n of document.querySelectorAll('#grupos .dyn-name')) {
+    const clave = n.value.trim().toLowerCase();
+    if (!clave) continue;
+    if (vistos.has(clave)) { mostrarError(`El nombre "${n.value.trim()}" está repetido: cada grupo necesita un nombre distinto`); return; }
+    vistos.add(clave);
+  }
+
   const d = await enviar('/calcular_anova', {
     grupos: JSON.stringify(grupos), alfa: document.getElementById('alfa').value.trim(),
   }, document.getElementById('btnCalc'));
-  if (d) renderResults(d);
+  if (d) renderResults(d, t);
 }
 
-function renderResults(d) {
+function renderResults(d, t) {
   document.getElementById('statsGrid').innerHTML = `
     <div class="res-split">
       ${grupoRes('Prueba F', [
@@ -179,28 +235,32 @@ function renderResults(d) {
   const comp = d.rechaza
     ? `F = ${fmt(d.f, 4)} &gt; ${fmt(d.f_crit, 4)} y p = ${fmtP(d.p_valor)} &lt; α = ${d.alfa}.`
     : `F = ${fmt(d.f, 4)} ≤ ${fmt(d.f_crit, 4)} y p = ${fmtP(d.p_valor)} ≥ α = ${d.alfa}.`;
+  const plural = esc(t.plural);
+  const uno = t.art === 'la' ? 'una de las' : 'uno de los';
+  const los = t.art === 'la' ? 'las' : 'los';
   document.getElementById('decision').innerHTML = d.rechaza
-    ? conclusion(true, 'Se rechaza H₀', `${comp} Hay evidencia de que <strong>al menos una media es diferente</strong> a las demás.`)
-    : conclusion(false, 'No se rechaza H₀', `${comp} No hay evidencia suficiente para decir que las medias son diferentes.`);
+    ? conclusion(true, 'Se rechaza H₀', `${comp} Hay evidencia de que <strong>por lo menos ${uno} ${plural} tiene una media diferente</strong>.`)
+    : conclusion(false, 'No se rechaza H₀', `${comp} No hay evidencia suficiente para decir que las medias de ${los} ${plural} sean diferentes.`);
 
   document.getElementById('anovaBody').innerHTML = `
-    <tr><td class="txt">Tratamientos (entre grupos)</td><td>${fmt(d.scb)}</td><td>${d.gl_b}</td><td>${fmt(d.cmb)}</td><td class="hl">${fmt(d.f, 4)}</td><td class="hl">${fmtP(d.p_valor)}</td></tr>
-    <tr><td class="txt">Error (dentro de grupos)</td><td>${fmt(d.scw)}</td><td>${d.gl_w}</td><td>${fmt(d.cmw)}</td><td></td><td></td></tr>
+    <tr><td class="txt">Tratamientos (entre ${plural})</td><td>${fmt(d.scb)}</td><td>${d.gl_b}</td><td>${fmt(d.cmb)}</td><td class="hl">${fmt(d.f, 4)}</td><td class="hl">${fmtP(d.p_valor)}</td></tr>
+    <tr><td class="txt">Error (dentro de cada ${esc(t.singular)})</td><td>${fmt(d.scw)}</td><td>${d.gl_w}</td><td>${fmt(d.cmw)}</td><td></td><td></td></tr>
     <tr class="sum-row"><td class="txt">Total</td><td>${fmt(d.sct)}</td><td>${d.gl_t}</td><td></td><td></td><td></td></tr>`;
 
+  document.getElementById('colGrupo').textContent = t.etiqueta;
   document.getElementById('gruposBody').innerHTML = d.grupos.map((g, i) => `
     <tr>
-      <td class="txt">Grupo ${i + 1}</td>
+      <td class="txt">${esc(t.nombres[i])}</td>
       <td>${g.n}</td><td>${fmt(g.suma)}</td><td>${fmt(g.media)}</td><td>${fmt(g.varianza)}</td>
       <td>${fmt(g.contrib)}</td>
     </tr>`).join('') + `
     <tr class="sum-row"><td class="txt">Global</td><td>${d.n_total}</td><td>${fmt(d.grupos.reduce((s, g) => s + g.suma, 0))}</td><td>${fmt(d.media_global)}</td><td></td><td>${fmt(d.scb)}</td></tr>`;
 
   document.getElementById('results').style.display = 'block';
-  graficar(d);
+  graficar(d, t);
 }
 
-function graficar(d) {
+function graficar(d, t) {
   if (myChart) myChart.destroy();
   const puntos = d.grupos.flatMap((g, i) => g.datos.map(y => ({ x: i + 1, y })));
   const medias = d.grupos.map((g, i) => ({
@@ -211,7 +271,7 @@ function graficar(d) {
   ejes.x.min = 0.5;
   ejes.x.max = d.k + 0.5;
   ejes.x.afterBuildTicks = eje => { eje.ticks = d.grupos.map((_, i) => ({ value: i + 1 })); };
-  ejes.x.ticks = { font: FUENTE_GRAFICA, callback: v => `Grupo ${v}` };
+  ejes.x.ticks = { font: FUENTE_GRAFICA, callback: v => t.nombres[v - 1] };
   ejes.x.grid = { display: false };
 
   myChart = new Chart(document.getElementById('anovaChart'), {
