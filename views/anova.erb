@@ -80,6 +80,16 @@
       </div>
     </div>
 
+    <div class="card" id="lsdCard">
+      <div class="card-header">
+        <span class="card-title">Prueba LSD de Fisher</span>
+      </div>
+      <div class="card-body">
+        <div class="lsd-calc" id="lsdCalc"></div>
+        <div class="lsd-grid" id="lsdGrid"></div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header">
         <span class="card-title">Datos y medias por grupo</span>
@@ -257,7 +267,64 @@ function renderResults(d, t) {
     <tr class="sum-row"><td class="txt">Global</td><td>${d.n_total}</td><td>${fmt(d.grupos.reduce((s, g) => s + g.suma, 0))}</td><td>${fmt(d.media_global)}</td><td></td><td>${fmt(d.scb)}</td></tr>`;
 
   document.getElementById('results').style.display = 'block';
+  // La prueba LSD solo tiene sentido si el ANOVA rechaza H₀
+  document.getElementById('lsdCard').style.display = d.rechaza ? '' : 'none';
+  if (d.rechaza) renderLSD(d, t);
   graficar(d, t);
+}
+
+// Nombre libre del usuario escapado para ir dentro de \text{} en KaTeX
+function texNombre(s) {
+  const especiales = { '\\': '\\textbackslash{}', '^': '\\textasciicircum{}', '~': '\\textasciitilde{}' };
+  return s.replace(/[\\{}$&#_%^~]/g, c => especiales[c] || '\\' + c);
+}
+
+// Fórmula que se dibuja con KaTeX después de insertar el HTML
+const formula = (latex, respaldo) => `<div class="lsd-f" data-latex="${esc(latex)}" data-resp="${esc(respaldo)}"></div>`;
+
+function renderLSD(d, t) {
+  const l = d.lsd;
+  const tt = fmt(l.t, 4), cme = fmt(d.cmw, 4);
+  const calc = [
+    formula(`t_{\\alpha/2,\\,N-k} = t_{${l.alfa_2},\\,${l.gl}} = ${tt}`, `t(α/2, N − k) = t(${l.alfa_2}, ${l.gl}) = ${tt}`),
+    formula(`CME = ${cme}`, `CME = ${cme}`),
+  ];
+  if (l.mismo_n) {
+    const n = d.grupos[0].n;
+    calc.push(formula(`LSD = t_{\\alpha/2,\\,N-k}\\sqrt{CME\\left(\\frac{1}{n_i} + \\frac{1}{n_j}\\right)} = ${tt}\\sqrt{${cme}\\left(\\frac{1}{${n}} + \\frac{1}{${n}}\\right)} = ${fmt(l.lsd, 4)}`,
+      `LSD = t·√(CME·(1/nᵢ + 1/nⱼ)) = ${tt}·√(${cme}·(1/${n} + 1/${n})) = ${fmt(l.lsd, 4)}`));
+  } else {
+    calc.push(formula(`LSD_{ij} = t_{\\alpha/2,\\,N-k}\\sqrt{CME\\left(\\frac{1}{n_i} + \\frac{1}{n_j}\\right)}`,
+      'LSD_ij = t·√(CME·(1/nᵢ + 1/nⱼ))') + '<p class="field-hint">Los grupos tienen distinto tamaño: cada par tiene su propio LSD.</p>');
+  }
+  document.getElementById('lsdCalc').innerHTML = calc.join('');
+
+  const mu = nom => `\\mu_{\\text{${texNombre(nom)}}}`;
+  const xb = nom => `\\bar{x}_{\\text{${texNombre(nom)}}}`;
+  const valor = x => x < 0 ? `(${fmt(x, 4)})` : fmt(x, 4);
+  document.getElementById('lsdGrid').innerHTML = l.pares.map(p => {
+    const a = t.nombres[p.i], b = t.nombres[p.j];
+    const ma = d.grupos[p.i].media, mb = d.grupos[p.j].media;
+    const signo = p.rechaza ? '>' : '\\le', signoTxt = p.rechaza ? '>' : '≤';
+    const lsd = fmt(p.lsd, 4), dif = fmt(p.dif, 4);
+    return `
+      <div class="lsd-col">
+        <div>
+          ${formula(`H_0: ${mu(a)} = ${mu(b)}`, `H₀: μ(${a}) = μ(${b})`)}
+          ${formula(`H_a: ${mu(a)} \\neq ${mu(b)}`, `Hₐ: μ(${a}) ≠ μ(${b})`)}
+        </div>
+        <div>
+          ${formula(`|${xb(a)} - ${xb(b)}|`, `|x̄(${a}) − x̄(${b})|`)}
+          ${formula(`= |${fmt(ma, 4)} - ${valor(mb)}| = ${dif} ${signo} ${lsd}`, `= |${fmt(ma, 4)} − ${valor(mb)}| = ${dif} ${signoTxt} ${lsd}`)}
+        </div>
+        <div class="lsd-dec ${p.rechaza ? 'si' : 'no'}">${p.rechaza ? 'Se rechaza H₀' : 'No se rechaza H₀'}</div>
+        <div class="lsd-concl">${p.rechaza
+          ? `${esc(a)} y ${esc(b)} son diferentes`
+          : `No hay evidencia de que ${esc(a)} y ${esc(b)} sean diferentes`}</div>
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('#lsdCard .lsd-f').forEach(el => tex(el, el.dataset.latex, el.dataset.resp));
 }
 
 function graficar(d, t) {

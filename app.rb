@@ -246,6 +246,15 @@ post '/calcular_anova' do
     f = cmb / cmw
     f_crit = Estadistica.f_inv(1 - alfa, gl_b, gl_w)
 
+    # LSD de Fisher: compara cada par de medias con t·√(CME·(1/nᵢ + 1/nⱼ))
+    t_lsd = Estadistica.t_inv(1 - alfa / 2, gl_w)
+    mismo_n = stats.map { |s| s[:n] }.uniq.length == 1
+    pares = (0...k).to_a.combination(2).map do |i, j|
+      dif = (stats[i][:media] - stats[j][:media]).abs
+      lsd = t_lsd * Math.sqrt(cmw * (1.0 / stats[i][:n] + 1.0 / stats[j][:n]))
+      { i: i, j: j, dif: num(dif), lsd: num(lsd), rechaza: dif > lsd }
+    end
+
     {
       alfa: alfa, k: k, n_total: n_total, media_global: num(media_global),
       grupos: stats.map { |s| { n: s[:n], suma: num(s[:suma]), media: num(s[:media]), varianza: num(s[:varianza]), contrib: num(s[:n] * (s[:media] - media_global)**2), datos: s[:datos] } },
@@ -253,7 +262,11 @@ post '/calcular_anova' do
       gl_b: gl_b, gl_w: gl_w, gl_t: n_total - 1,
       cmb: num(cmb), cmw: num(cmw),
       f: num(f), p_valor: num(1 - Estadistica.f_cdf(f, gl_b, gl_w), 8), f_crit: num(f_crit),
-      rechaza: f > f_crit
+      rechaza: f > f_crit,
+      lsd: {
+        t: num(t_lsd), gl: gl_w, alfa_2: alfa / 2, mismo_n: mismo_n,
+        lsd: mismo_n ? pares.first[:lsd] : nil, pares: pares
+      }
     }
   end
 end

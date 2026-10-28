@@ -857,6 +857,26 @@
 
     .dyn-row textarea { min-width: 0; }
 
+    /* ── PRUEBA LSD DE FISHER (ANOVA): una columna por par, como en el cuaderno ── */
+    .lsd-calc { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.4rem; }
+    .lsd-calc .field-hint { margin: 0; }
+    /* Todas las columnas en una fila; si no caben, scroll horizontal */
+    .lsd-grid {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 0.4rem;
+    }
+    .lsd-col { flex: 1 0 auto; min-width: 13rem; border-left: 2px solid var(--accent); }
+    .lsd-col:last-child { border-right: 2px solid var(--accent); }
+    .lsd-col > div { padding: 0.5rem 0.6rem; }
+    .lsd-col > div + div { border-top: 1px solid var(--border); }
+    .lsd-f { overflow-x: auto; overflow-y: hidden; padding: 0.1rem 0; }
+    .lsd-dec { font-size: 0.85rem; font-weight: 700; }
+    .lsd-dec.si { color: var(--green); }
+    .lsd-dec.no { color: var(--muted); }
+    /* El texto se acomoda al ancho que piden las fórmulas, sin ensanchar la columna */
+    .lsd-concl { font-size: 0.85rem; line-height: 1.45; width: 0; min-width: 100%; box-sizing: border-box; }
+
     /* Qué se compara (ANOVA): nombre + artículo el/la */
     .factor-row { margin-bottom: 0.9rem; }
     .factor-row #factor { width: 10rem; }
