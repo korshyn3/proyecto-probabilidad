@@ -4,7 +4,7 @@
   <div class="page-header-inner">
     <div class="breadcrumb">Inicio / Problemas</div>
     <h1>Colección de Problemas</h1>
-    <p class="page-desc">Diez problemas resueltos — distribución normal, varianza y valor esperado</p>
+    <p class="page-desc">18 problemas resueltos — normal, varianza, valor esperado, t-Student, tamaño de muestra, ANOVA y regresión</p>
   </div>
 </div>
 
@@ -265,6 +265,243 @@ s  = √60.266 ≈ 7.763</div>
     </div>
   </div>
 
+  <div class="section-label" style="margin-top:1.6rem;">Distribución t de Student — 2 problemas</div>
+
+  <!-- Problema 11 -->
+  <div class="problem-card" id="p11">
+    <div class="problem-header" onclick="toggle('p11')">
+      <span class="problem-num">11</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        En una muestra de <strong>16 focos</strong> la vida media fue x̄ = 52 días con s = 8 días.
+        Construye un <strong>intervalo de confianza del 95 %</strong> para la vida media μ.
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">σ desconocida y n pequeña  →  se usa t con ν = n − 1 = 15
+α = 0.05  →  t(0.025, 15) = 2.131
+
+Error estándar:  s / √n = 8 / √16 = 8 / 4 = 2
+Margen de error: E = t · s/√n = 2.131 × 2 = 4.263
+
+IC = x̄ ± E = 52 ± 4.263</div>
+      <div class="sol-answer">IC 95 %: 47.74 ≤ μ ≤ 56.26 días</div>
+    </div>
+  </div>
+
+  <!-- Problema 12 -->
+  <div class="problem-card" id="p12">
+    <div class="problem-header" onclick="toggle('p12')">
+      <span class="problem-num">12</span>
+      <span class="problem-type">t-Student</span>
+      <div class="problem-text">
+        Una máquina debe llenar bolsas con <strong>12 kg</strong>. En 10 bolsas se obtuvo x̄ = 12.6 kg y s = 1.5 kg.
+        Con α = 0.05, ¿hay evidencia de que el llenado promedio <strong>es distinto de 12 kg</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">H₀: μ = 12     H₁: μ ≠ 12   (dos colas)     ν = 10 − 1 = 9
+
+t = (x̄ − μ₀) / (s/√n) = (12.6 − 12) / (1.5/√10)
+  = 0.6 / 0.4743 = 1.265
+
+t crítico: t(0.025, 9) = 2.262
+|t| = 1.265 &lt; 2.262   →   no se rechaza H₀
+p-valor = 2·P(T &gt; 1.265) ≈ 0.2377 &gt; 0.05</div>
+      <div class="sol-answer">No hay evidencia de que el llenado sea distinto de 12 kg (p ≈ 0.238)</div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:1.6rem;">Tamaño de Muestra — 2 problemas</div>
+
+  <!-- Problema 13 -->
+  <div class="problem-card" id="p13">
+    <div class="problem-header" onclick="toggle('p13')">
+      <span class="problem-num">13</span>
+      <span class="problem-type">Tamaño de muestra</span>
+      <div class="problem-text">
+        Se quiere estimar el tiempo medio de traslado de los empleados. Por estudios previos σ = 15 min.
+        ¿Cuántos empleados hay que encuestar para que el error sea <strong>a lo más 3 min</strong> con <strong>95 % de confianza</strong>?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">Confianza 95 %  →  z = 1.96
+
+n = (z · σ / E)² = (1.96 × 15 / 3)²
+  = (9.8)² = 96.04
+
+Siempre se redondea hacia arriba.</div>
+      <div class="sol-answer">n = 97 empleados</div>
+    </div>
+  </div>
+
+  <!-- Problema 14 -->
+  <div class="problem-card" id="p14">
+    <div class="problem-header" onclick="toggle('p14')">
+      <span class="problem-num">14</span>
+      <span class="problem-type">Tamaño de muestra</span>
+      <div class="problem-text">
+        Una universidad de <strong>N = 1500 alumnos</strong> quiere estimar la proporción que usa transporte público,
+        con un error de <strong>4 %</strong> y <strong>90 % de confianza</strong>. No hay estimación previa de p.
+        ¿Qué tamaño de muestra se necesita?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">Sin estimación previa  →  p = 0.5  (caso más desfavorable)
+Confianza 90 %  →  z = 1.645
+
+n₀ = z² · p(1 − p) / E² = 1.645² × 0.25 / 0.04²
+   = 2.7055 × 0.25 / 0.0016 ≈ 422.74
+
+Corrección por población finita:
+n = n₀ / (1 + (n₀ − 1)/N) = 422.74 / (1 + 421.74/1500)
+  = 422.74 / 1.2812 ≈ 329.97</div>
+      <div class="sol-answer">n = 330 alumnos  (sin corrección serían 423)</div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:1.6rem;">ANOVA de un Factor — 2 problemas</div>
+
+  <!-- Problema 15 -->
+  <div class="problem-card" id="p15">
+    <div class="problem-header" onclick="toggle('p15')">
+      <span class="problem-num">15</span>
+      <span class="problem-type">ANOVA</span>
+      <div class="problem-text">
+        Se prueban tres fertilizantes y se mide el crecimiento (cm) de 4 plantas con cada uno:
+        <strong>A: 8, 10, 9, 11</strong> · <strong>B: 12, 14, 13, 13</strong> · <strong>C: 9, 11, 10, 10</strong>.
+        Con α = 0.05, ¿hay diferencia entre los fertilizantes? Si la hay, ¿cuáles difieren?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">k = 3, n = 4 por grupo, N = 12
+Medias: x̄_A = 9.5   x̄_B = 13.0   x̄_C = 10.0   x̄ global = 10.833
+
+SC entre   = Σ nᵢ(x̄ᵢ − x̄)² = 4(1.778 + 4.694 + 0.694) = 28.667
+SC dentro  = Σ Σ (x − x̄ᵢ)² = 5 + 2 + 2 = 9.000
+
+Fuente    SC       gl   CM       F
+Entre     28.667    2   14.333   14.333
+Dentro     9.000    9    1.000
+Total     37.667   11
+
+F crítico: F(0.05; 2, 9) = 4.256
+F = 14.33 &gt; 4.256   →   se rechaza H₀   (p ≈ 0.0016)
+
+LSD de Fisher: t(0.025, 9)·√(CMD·(1/4 + 1/4)) = 2.262 × √0.5 = 1.600
+|A − B| = 3.5 &gt; 1.6  → difieren
+|A − C| = 0.5 &lt; 1.6  → no difieren
+|B − C| = 3.0 &gt; 1.6  → difieren</div>
+      <div class="sol-answer">Sí hay diferencia: B produce más crecimiento que A y que C; A y C son equivalentes</div>
+    </div>
+  </div>
+
+  <!-- Problema 16 -->
+  <div class="problem-card" id="p16">
+    <div class="problem-header" onclick="toggle('p16')">
+      <span class="problem-num">16</span>
+      <span class="problem-type">ANOVA</span>
+      <div class="problem-text">
+        Se comparan tres métodos de enseñanza con 5 alumnos cada uno (calificación sobre 30):
+        <strong>M1: 20, 23, 25, 22, 24</strong> · <strong>M2: 21, 24, 26, 23, 25</strong> · <strong>M3: 22, 20, 24, 25, 23</strong>.
+        Con α = 0.05, ¿algún método da mejores resultados?
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">k = 3, n = 5 por grupo, N = 15
+Medias: x̄₁ = 22.8   x̄₂ = 23.8   x̄₃ = 22.8   x̄ global = 23.133
+
+SC entre   = 5[(−0.333)² + (0.667)² + (−0.333)²] = 3.333
+SC dentro  = 14.8 + 14.8 + 14.8 = 44.400
+
+Fuente    SC       gl   CM      F
+Entre      3.333    2   1.667   0.450
+Dentro    44.400   12   3.700
+Total     47.733   14
+
+F crítico: F(0.05; 2, 12) = 3.885
+F = 0.450 &lt; 3.885   →   no se rechaza H₀   (p ≈ 0.648)</div>
+      <div class="sol-answer">No hay evidencia de diferencia entre los métodos; no hace falta la prueba LSD</div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:1.6rem;">Regresión Lineal Simple — 2 problemas</div>
+
+  <!-- Problema 17 -->
+  <div class="problem-card" id="p17">
+    <div class="problem-header" onclick="toggle('p17')">
+      <span class="problem-num">17</span>
+      <span class="problem-type">Regresión</span>
+      <div class="problem-text">
+        Horas de estudio (x) y calificación (y) de 5 alumnos:
+        <strong>(1, 52), (2, 58), (3, 65), (4, 70), (5, 75)</strong>.
+        Encuentra la recta de regresión, r y R², y prueba si la pendiente es significativa (α = 0.05).
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">n = 5    x̄ = 3    ȳ = 64
+
+Sxx = Σ(x − x̄)² = 4 + 1 + 0 + 1 + 4 = 10
+Sxy = Σ(x − x̄)(y − ȳ) = 24 + 6 + 0 + 6 + 22 = 58
+Syy = Σ(y − ȳ)² = 144 + 36 + 1 + 36 + 121 = 338
+
+b₁ = Sxy / Sxx = 58 / 10 = 5.8
+b₀ = ȳ − b₁x̄ = 64 − 5.8(3) = 46.6
+
+r  = Sxy / √(Sxx·Syy) = 58 / √3380 = 0.9976
+R² = 0.9953
+
+Prueba de la pendiente (H₀: β₁ = 0), gl = n − 2 = 3
+SCE = 1.6    sₑ = √(1.6/3) = 0.7303    s(b₁) = 0.7303/√10 = 0.2309
+t = 5.8 / 0.2309 = 25.11  &gt;  t(0.025, 3) = 3.182   →   se rechaza H₀</div>
+      <div class="sol-answer">ŷ = 46.6 + 5.8x  |  r ≈ 0.998  |  R² ≈ 0.995  |  la pendiente es significativa</div>
+      <div class="chart-wrap" style="height:220px; margin-top:1rem;">
+        <canvas id="chart-p17"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p17-note"></p>
+    </div>
+  </div>
+
+  <!-- Problema 18 -->
+  <div class="problem-card" id="p18">
+    <div class="problem-header" onclick="toggle('p18')">
+      <span class="problem-num">18</span>
+      <span class="problem-type">Regresión</span>
+      <div class="problem-text">
+        Temperatura (°C, x) y ventas diarias de helados (y):
+        <strong>(10, 110), (15, 125), (20, 140), (25, 148), (30, 165), (35, 178)</strong>.
+        Ajusta la recta y <strong>estima las ventas para 40 °C</strong>.
+      </div>
+      <span class="problem-toggle">▼</span>
+    </div>
+    <div class="problem-solution">
+      <div class="sol-steps">n = 6    x̄ = 22.5    ȳ = 144.333
+
+Sxx = 437.5    Sxy = 1170    Syy = 3145.333
+
+b₁ = 1170 / 437.5 = 2.6743
+b₀ = 144.333 − 2.6743(22.5) = 84.162
+
+r  = 1170 / √(437.5 × 3145.333) = 0.9974
+R² = 0.9948  →  la temperatura explica el 99.5 % de la variación en ventas
+
+Predicción:  ŷ(40) = 84.162 + 2.6743(40) = 191.13
+(40 °C está fuera del rango observado: es una extrapolación, se toma con cautela)</div>
+      <div class="sol-answer">ŷ = 84.16 + 2.674x  |  R² ≈ 0.995  |  ŷ(40) ≈ 191 helados</div>
+      <div class="chart-wrap" style="height:220px; margin-top:1rem;">
+        <canvas id="chart-p18"></canvas>
+      </div>
+      <p class="chart-note" id="chart-p18-note"></p>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -347,7 +584,58 @@ function buildProblemChart(canvasId, shadedSets, note) {
   if (noteEl) noteEl.textContent = note;
 }
 
+function buildRegressionChart(canvasId, xs, ys, b0, b1, note) {
+  if (probCharts[canvasId]) {
+    probCharts[canvasId].destroy();
+    delete probCharts[canvasId];
+  }
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  probCharts[canvasId] = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          data: xs.map((x, i) => ({ x, y: ys[i] })),
+          backgroundColor: '#1a3a6b',
+          pointRadius: 4,
+          showLine: false
+        },
+        {
+          data: [{ x: xMin, y: b0 + b1 * xMin }, { x: xMax, y: b0 + b1 * xMax }],
+          borderColor: 'rgba(26,58,107,0.55)',
+          borderWidth: 2,
+          pointRadius: 0,
+          showLine: true,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 350 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          type: 'linear',
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        },
+        y: {
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+  const noteEl = document.getElementById(canvasId + '-note');
+  if (noteEl) noteEl.textContent = note;
+}
+
 const PROBLEM_CHARTS = {
+  'p17': () => buildRegressionChart('chart-p17', [1, 2, 3, 4, 5], [52, 58, 65, 70, 75], 46.6, 5.8, 'Datos y recta ŷ = 46.6 + 5.8x'),
+  'p18': () => buildRegressionChart('chart-p18', [10, 15, 20, 25, 30, 35], [110, 125, 140, 148, 165, 178], 84.162, 2.6743, 'Datos y recta ŷ = 84.16 + 2.674x'),
   'p1': () => buildProblemChart('chart-p1', [genCurve(-4, 1.50, 0.02)],     'Área sombreada: P(Z ≤ 1.50) ≈ 0.9332'),
   'p2': () => buildProblemChart('chart-p2', [genCurve(1.20, 4, 0.02)],      'Área sombreada: P(Z ≥ 1.20) ≈ 0.1151'),
   'p3': () => buildProblemChart('chart-p3', [genCurve(-1.00, 2.00, 0.02)],  'Área sombreada: P(−1 ≤ Z ≤ 2) ≈ 0.8186'),
